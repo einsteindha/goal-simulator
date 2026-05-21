@@ -478,6 +478,23 @@ function renderGoalCardsList(){
     var typeOpts=Object.keys(GOAL_TYPES).map(function(k){
       return '<option value="'+k+'"'+(card.type===k?' selected':'')+'>'+GOAL_TYPES[k].icon+' '+GOAL_TYPES[k].name+'</option>';
     }).join('');
+    // 조기 은퇴 준비금: 입력 불가, 안내만 표시
+    if(card.type==='retire'){
+      out+='<div class="goal-card open" id="gcb-'+cid+'">'
+        +'<div class="goal-card-header">'
+        +'<span style="font-size:16px">🏖️</span>'
+        +'<span class="goal-card-title">'+card.name+'</span>'
+        +'<button class="gc-del" onclick="removeGoalCard('+cid+')">×</button>'
+        +'</div>'
+        +'<div class="goal-card-body" style="display:block;padding:16px;text-align:center;line-height:1.8">'
+        +'<div style="font-size:12px;color:var(--text2);margin-bottom:12px">은퇴 후 필요 자금은 물가·수익률·기대수명·생활비 등<br>복합적인 변수를 함께 고려해야 합니다.</div>'
+        +'<div style="background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--blue)">'
+        +'📊 <b>은퇴 시뮬레이터</b>를 이용해 주세요<br>'
+        +'<span style="font-size:10px;color:var(--text3)">retirement-calculator에서 정밀 분석 가능합니다</span>'
+        +'</div>'
+        +'</div></div>';
+      return; // forEach 콜백 종료 - 이 카드는 이후 처리 건너뜀
+    }
     var resHtml='';
     if(res){
       var rc=res.det.achieved?'var(--green)':'var(--amber)';
@@ -583,7 +600,12 @@ function updateCard(id,key,val){
   const card=goalCards.find(function(c){return c.id===id;});
   if(!card)return;
   card[key]=val;
-  if(key==='type'){card.name=GOAL_TYPES[val].name;renderGoalCardsList();}
+  if(key==='type'){
+    card.name=GOAL_TYPES[val].name;
+    if(val==='retire') card.result=null; // 결과 초기화
+    renderGoalCardsList();
+    _autoGoals();
+  }
   if(key==='housePrice')card.amount=val;
 }
 
@@ -643,6 +665,7 @@ function runAllGoals(){
   const runs=1500;
 
   goalCards.forEach(function(card){
+    if(card.type==='retire') return; // 은퇴 카드 제외
     const cardRet=(card.nomRet||6)/100;
     const cardInf=(card.inflation||2.5)/100;
     const cardStd=(card.stdDev||10)/100;
@@ -1183,366 +1206,5 @@ setTimeout(function(){
 
 
 </script>
-<style>
-
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
-:root{
-  --bg:#0f1117;--bg2:#181b24;--bg3:#1e2130;--bg4:#252840;--bg5:#2e3255;
-  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
-  --text:#e8eaf6;--text2:#8b90b0;--text3:#555a7a;
-  --blue:#4f8ef7;--green:#22c87a;--amber:#f59e0b;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;
-  --accent:#4f8ef7;--radius:8px;--radius-lg:12px;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden;font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:13px}
-
-/* HEADER */
-.header{height:52px;flex-shrink:0;background:linear-gradient(135deg,#0d1b3e,#1a1040);border-bottom:1px solid rgba(79,142,247,.2);display:flex;align-items:center;justify-content:space-between;padding:0 18px}
-.header-title{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.3px}
-.header-sub{font-size:11px;color:#8fa8d8;margin-top:1px}
-.header-badge{font-size:10px;font-weight:600;background:rgba(79,142,247,.15);color:#7eb3ff;border:1px solid rgba(79,142,247,.3);border-radius:20px;padding:3px 10px}
-
-/* TOP NAV */
-.nav-bar{height:40px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:flex-end;padding:0 14px;gap:2px}
-.nav-btn{padding:8px 15px;border:none;background:transparent;color:var(--text3);font-size:12px;font-weight:700;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap}
-.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-.nav-btn:hover:not(.active){color:var(--text2)}
-
-/* PAGES */
-.page{display:none;height:calc(100vh - 92px)}
-.page.active{display:flex}
-.split-left{width:360px;flex-shrink:0;overflow-y:auto;background:var(--bg2);border-right:1px solid var(--border);padding:14px}
-.split-right{flex:1;overflow-y:auto;background:var(--bg);padding:14px}
-
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
-
-/* SECTION */
-.section{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 13px;margin-bottom:10px}
-.section-title{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.section-title::before{content:'';display:block;width:3px;height:12px;background:var(--accent);border-radius:2px}
-
-label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px;margin-top:9px}
-label:first-child{margin-top:0}
-input[type=text],input[type=number],select{width:100%;padding:7px 10px;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:inherit;font-size:13px;outline:none;transition:border-color .2s}
-input:focus,select:focus{border-color:var(--accent);background:#2a2e50}
-select option{background:#1e2130}
-.input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.input-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.input-unit{position:relative}
-.input-unit input{padding-right:34px}
-.input-unit .unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text3);pointer-events:none;font-family:'DM Mono',monospace}
-
-.range-row{display:flex;align-items:center;gap:8px}
-.range-row input[type=range]{flex:1;height:4px;-webkit-appearance:none;background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--pct,50%),var(--bg4) var(--pct,50%));border-radius:4px;padding:0;border:none;cursor:pointer}
-.range-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--bg2);box-shadow:0 0 0 2px rgba(79,142,247,.3)}
-.range-val{font-size:13px;font-weight:700;color:var(--accent);font-family:'DM Mono',monospace;min-width:42px;text-align:right}
-
-.btn-run{width:100%;padding:11px;border:none;border-radius:var(--radius-lg);color:#fff;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 16px rgba(79,142,247,.3);transition:opacity .15s,transform .1s;margin-top:4px;background:linear-gradient(135deg,#2563eb,#4f8ef7)}
-.btn-run:hover{opacity:.9}.btn-run:active{transform:scale(.98)}
-.btn-sm{padding:5px 11px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);border-radius:var(--radius);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
-.btn-sm:hover{background:var(--bg5);color:var(--text)}
-.btn-danger{border-color:rgba(248,113,113,.3);color:var(--red)}
-.btn-success{border-color:rgba(34,200,122,.3);color:var(--green);background:rgba(34,200,122,.08)}
-
-.info-hint{font-size:10px;color:var(--text3);margin-top:5px;line-height:1.6}
-
-/* GOAL CARDS */
-.goal-cards{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
-.goal-card{background:var(--bg4);border:1px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden}
-.goal-card.active-card{border-color:var(--accent);box-shadow:0 0 0 1px rgba(79,142,247,.3)}
-.goal-card-header{display:flex;align-items:center;padding:9px 12px;cursor:pointer;gap:8px;user-select:none}
-.goal-card-icon{font-size:16px}
-.goal-card-name{flex:1;font-size:12px;font-weight:700;color:var(--text)}
-.goal-card-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700}
-.gcb-ok{background:rgba(34,200,122,.15);color:var(--green)}
-.gcb-warn{background:rgba(245,158,11,.15);color:var(--amber)}
-.gcb-bad{background:rgba(248,113,113,.15);color:var(--red)}
-.gcb-none{background:var(--bg3);color:var(--text3)}
-.goal-card-body{padding:10px 12px 12px;border-top:1px solid var(--border);display:none}
-.goal-card-body.open{display:block}
-
-/* SUMMARY DASHBOARD */
-.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-.dash-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:11px 13px}
-.dash-label{font-size:10px;font-weight:600;color:var(--text3);margin-bottom:3px}
-.dash-value{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;line-height:1.2}
-.dash-sub{font-size:10px;color:var(--text2);margin-top:3px}
-
-/* TIMELINE */
-.timeline-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:12px}
-
-/* RESULT TABS */
-.tabs{display:flex;gap:4px;background:var(--bg2);border-radius:var(--radius-lg);padding:4px;margin-bottom:12px;border:1px solid var(--border);flex-wrap:wrap}
-.tab-btn{flex:1;min-width:80px;padding:7px;border:none;background:transparent;color:var(--text2);font-size:11px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap}
-.tab-btn.active{background:var(--bg4);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4)}
-
-.panel{display:none}.panel.active{display:block}
-.chart-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:12px}
-.chart-title{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px}
-.chart-canvas{width:100%!important}
-.result-msg{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:12px;font-size:12px;line-height:1.9;color:var(--text2)}
-.result-msg b{color:var(--text)}
-.data-table{width:100%;border-collapse:collapse;font-size:11px}
-.data-table th{padding:6px 8px;text-align:left;color:var(--text3);font-weight:600;font-size:10px;border-bottom:1px solid var(--border);background:var(--bg2)}
-.data-table td{padding:6px 8px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace}
-.data-table tr:last-child td{border-bottom:none}
-.data-table tr:hover td{background:rgba(255,255,255,.02)}
-.tnum{color:var(--text)}.t-pos{color:var(--green)}.t-neg{color:var(--red)}.t-yr{color:var(--text2)}
-.progress-bar-wrap{background:var(--bg4);border-radius:6px;height:8px;overflow:hidden;margin-top:4px}
-.progress-bar{height:100%;border-radius:6px;transition:width .8s ease}
-.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:260px;gap:10px;color:var(--text3)}
-
-/* GAUGE */
-.gauge-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.gauge-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px}
-.gauge-label{font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
-.gauge-bar-wrap{height:10px;background:var(--bg4);border-radius:6px;overflow:hidden;position:relative;margin-bottom:5px}
-.gauge-bar{height:100%;border-radius:6px;transition:width .6s}
-.gauge-limit-line{position:absolute;top:0;height:100%;width:2px;background:#fff;opacity:.5}
-.gauge-row{display:flex;justify-content:space-between;align-items:baseline}
-.gauge-val{font-size:16px;font-weight:700;font-family:'DM Mono',monospace}
-.gauge-limit-text{font-size:10px;color:var(--text3)}
-.gauge-status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-top:4px;display:inline-block}
-.gs-ok{background:rgba(34,200,122,.15);color:var(--green)}
-.gs-warn{background:rgba(245,158,11,.15);color:var(--amber)}
-.gs-over{background:rgba(248,113,113,.15);color:var(--red)}
-
-.repay-compare{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.repay-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 12px}
-.repay-name{font-size:10px;font-weight:700;color:var(--text3);margin-bottom:5px}
-.repay-monthly{font-size:15px;font-weight:700;font-family:'DM Mono',monospace}
-.repay-total{font-size:10px;color:var(--text2);margin-top:3px}
-.repay-interest{font-size:10px;color:var(--amber)}
-
-/* 부동산 참고 패널 */
-.re-table-wrap{overflow-x:auto;margin-bottom:10px}
-.re-table{width:100%;border-collapse:collapse;font-size:11px;min-width:480px}
-.re-table th{padding:7px 9px;text-align:center;font-size:10px;font-weight:700;color:var(--text3);border-bottom:2px solid var(--border2);background:var(--bg3)}
-.re-table th:first-child{text-align:left}
-.re-table td{padding:6px 9px;text-align:center;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:11px}
-.re-table td:first-child{text-align:left;color:var(--text2);font-family:'Noto Sans KR',sans-serif;font-weight:600}
-.re-table tr:hover td{background:rgba(255,255,255,.02)}
-.re-pos{color:var(--green)}.re-neg{color:var(--red)}.re-neu{color:var(--text2)}
-.re-src-tabs{display:flex;gap:6px;margin-bottom:10px}
-.re-src-btn{padding:5px 14px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);border-radius:var(--radius);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
-.re-src-btn.active{background:rgba(79,142,247,.15);color:var(--blue);border-color:rgba(79,142,247,.4)}
-.re-type-tabs{display:flex;gap:6px;margin-bottom:10px}
-.re-note{font-size:10px;color:var(--text3);line-height:1.7;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
-.equity-link-box{background:rgba(34,200,122,.08);border:1px solid rgba(34,200,122,.2);border-radius:var(--radius);padding:8px 10px;margin-bottom:8px;font-size:11px;line-height:1.7;color:var(--text2);display:none}
-.equity-link-box b{color:#22c87a}
-
-/* 역산기 */
-.capacity-result{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-top:10px}
-.cap-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
-.cap-row:last-child{border-bottom:none;padding-top:8px;margin-top:4px}
-.cap-label{color:var(--text2)}
-.cap-val{font-family:'DM Mono',monospace;font-weight:700}
-
-/* 전세vs매매 */
-.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.compare-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
-.compare-card-title{font-size:12px;font-weight:700;margin-bottom:10px}
-.compare-winner{border-color:rgba(34,200,122,.4);box-shadow:0 0 0 1px rgba(34,200,122,.2)}
-
-@media(max-width:720px){
-  .page{flex-direction:column;height:auto;overflow:auto}
-  .split-left{width:100%}.split-right{overflow:visible}
-  html,body{overflow:auto}
-  .dash-grid,.gauge-grid,.compare-grid{grid-template-columns:1fr 1fr}
-  .repay-compare{grid-template-columns:1fr 1fr}
-}
-
-</style>
-</head>
-<body>
-<div class="header">
-  <div>
-    <div class="header-title">📊 재무 시뮬레이터</div>
-    <div class="header-sub">정원준 CFP · 목적자금 복수 계산 · 주택구입 대출 분석</div>
-  </div>
-  <span class="header-badge">상담용 참고자료</span>
-</div>
-
-<div class="nav-bar">
-  <button class="nav-btn active" onclick="switchPage('goals',this)">🎯 목적자금</button>
-  <button class="nav-btn" onclick="switchPage('housing',this)">🏠 주택구입</button>
-  <button class="nav-btn" onclick="switchPage('jeonsemont',this)">🏘️ 전세 vs 월세</button>
-</div>
-
-<!-- ══════════ PAGE: 목적자금 ══════════ -->
-<div id="page-goals" class="page active">
-<div class="split-left">
-
-  <div class="section">
-    <div class="section-title">공통 설정</div>
-    <div class="info-hint" style="margin-bottom:10px">※ 수익률·물가상승률·표준편차는 각 목적자금 카드에서 개별 설정합니다</div>
-    <label>소득 성장률 (연, 월 적립 자동 인상)</label>
-    <div class="range-row"><input type="range" id="g-income-growth" min="0" max="10" step="0.5" value="2" oninput="sr(this,'g-ig-v',1);_autoGoals();"><span class="range-val" id="g-ig-v">2.0%</span></div>
-    <div class="info-hint">※ 매년 월 적립액이 소득 성장률만큼 자동 증가합니다</div>
-
-  </div>
-
-  <div id="goal-cards-list" class="goal-cards"></div>
-
-  <button class="btn-sm btn-success" style="width:100%;margin-bottom:10px" onclick="addGoalCard();if(goalCards.length>0)setTimeout(runAllGoals,100);">+ 목적자금 추가</button>
-
-</div>
-
-<div class="split-right">
-  <div id="goals-empty" class="placeholder">
-    <div style="font-size:32px;opacity:.3">🎯</div>
-    <div style="font-size:13px">목적자금을 추가하고 실행하세요</div>
-  </div>
-  <div id="goals-content" style="display:none">
-    <div id="goals-dash" class="dash-grid"></div>
-    <div class="chart-wrap">
-      <div class="chart-title">목적자금 타임라인 — 전체 자산 경로</div>
-      <canvas id="chart-timeline" class="chart-canvas" height="140"></canvas>
-    </div>
-    <div id="goal-result-tabs" class="tabs"></div>
-    <div id="goal-result-panels"></div>
-  </div>
-</div>
-</div>
-
-<!-- ══════════ PAGE: 주택구입 ══════════ -->
-<div id="page-housing" class="page">
-<div class="split-left">
-
-  <div class="section">
-    <div class="section-title">주택 정보 <span style="font-size:10px;color:var(--text3);font-weight:400">※ 취득세·중개수수료·이사비용 제외</span></div>
-    <label>주택 매매가격 (만원)</label>
-    <div class="input-unit"><input type="number" id="h-price" value="80000" step="1000"><span class="unit">만원</span></div>
-    <div id="equity-link-box" class="equity-link-box"></div>
-    <label>자기자금 (만원)</label>
-    <div class="input-unit"><input type="number" id="h-equity" value="30000" step="500"><span class="unit">만원</span></div>
-    <div class="info-hint">※ 목적자금 시뮬레이션 결과가 있으면 자동 반영됩니다</div>
-    <label>지역 구분</label>
-    <select id="h-zone">
-      <option value="speculate">투기지역 / 투기과열지구</option>
-      <option value="adjust" selected>조정대상지역</option>
-      <option value="normal">일반 지역</option>
-    </select>
-    <label>주택 유형</label>
-    <select id="h-htype">
-      <option value="first" selected>무주택자 (첫 주택)</option>
-      <option value="replace">1주택 처분 조건부</option>
-      <option value="multi">다주택자</option>
-    </select>
-  </div>
-
-  <div class="section">
-    <div class="section-title">소득 & 기존 부채</div>
-    <label>현재 연 소득 (만원)</label>
-    <div class="input-unit"><input type="number" id="h-income" value="7000" step="100" oninput="updateFutureIncome()"><span class="unit">만원</span></div>
-    <div id="h-income-future-box" class="info-hint" style="margin-top:4px"></div>
-    <label>기존 주담대 월 상환 (만원)</label>
-    <div class="input-unit"><input type="number" id="h-exist-m" value="0" step="5"><span class="unit">만원</span></div>
-    <label>기타 대출 연 원리금 (만원)</label>
-    <div class="input-unit"><input type="number" id="h-exist-o" value="0" step="100"><span class="unit">만원</span></div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">대출 조건</div>
-    <label>대출 금리 (연 %)</label>
-    <div class="range-row"><input type="range" id="h-rate" min="1" max="10" step="0.05" value="3.8" oninput="sr(this,'h-rate-v',2)"><span class="range-val" id="h-rate-v">3.80%</span></div>
-    <label style="margin-top:10px">스트레스 가산금리 (연 %)</label>
-    <div class="range-row"><input type="range" id="h-stress" min="0" max="3" step="0.05" value="0.38" oninput="sr(this,'h-stress-v',2)"><span class="range-val" id="h-stress-v">0.38%</span></div>
-    <div class="info-hint">2024년 2단계 스트레스DSR 수도권 0.38%p</div>
-    <div class="input-row" style="margin-top:9px">
-      <div><label>대출 기간</label>
-        <select id="h-term"><option value="10">10년</option><option value="20">20년</option><option value="30" selected>30년</option><option value="35">35년</option><option value="40">40년</option></select>
-      </div>
-      <div><label>혼합형 거치</label>
-        <select id="h-grace"><option value="0" selected>없음</option><option value="1">1년</option><option value="3">3년</option><option value="5">5년</option></select>
-      </div>
-    </div>
-  </div>
-
-
-</div>
-
-<div class="split-right">
-  <div id="housing-empty" class="placeholder"><div style="font-size:32px;opacity:.3">🏠</div><div style="font-size:13px">대출 분석을 실행하세요</div></div>
-  <div id="housing-content" style="display:none">
-    <div id="h-gauge-area" class="gauge-grid"></div>
-    <div id="h-summary" class="result-msg"></div>
-    <div id="h-repay-compare" class="repay-compare"></div>
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchHTab('cash',this)">💸 현금흐름</button>
-      <button class="tab-btn" onclick="switchHTab('amort',this)">📋 상환 스케줄</button>
-      <button class="tab-btn" onclick="switchHTab('burden',this)">📊 부담 분석</button>
-    </div>
-    <div id="h-panel-cash" class="panel active">
-      <div class="chart-wrap"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><canvas id="chart-amort" class="chart-canvas" height="220"></canvas></div>
-      <div class="chart-wrap"><div class="chart-title">상환방식별 잔여 원금 추이</div><canvas id="chart-balance" class="chart-canvas" height="160"></canvas></div>
-    </div>
-    <div id="h-panel-amort" class="panel">
-      <div class="chart-wrap" style="padding:0;overflow:hidden">
-        <table class="data-table"><thead><tr><th>연도</th><th>연 원금</th><th>연 이자</th><th>연 합계</th><th>잔여원금</th><th>DSR점유</th></tr></thead>
-        <tbody id="h-amort-tbody"></tbody></table>
-      </div>
-    </div>
-    <div id="h-panel-burden" class="panel"><div id="h-burden-content"></div></div>
-  </div>
-</div>
-</div>
-
-<!-- ══════════ PAGE: 전세 vs 월세 ══════════ -->
-<div id="page-jeonsemont" class="page">
-<div class="split-left">
-  <div class="section">
-    <div class="section-title">전세 조건</div>
-    <label>전세 보증금 (만원)</label>
-    <div class="input-unit"><input type="number" id="jm-jeonse" value="30000" step="1000"><span class="unit">만원</span></div>
-    <label>전세 대출금 (만원)</label>
-    <div class="input-unit"><input type="number" id="jm-jloan" value="10000" step="1000"><span class="unit">만원</span></div>
-    <div class="info-hint">자기부담 보증금 = 전세보증금 − 전세대출금</div>
-    <label>전세 보증금 연 인상률 (%)</label>
-    <div class="range-row"><input type="range" id="jm-jrise" min="0" max="10" step="0.5" value="2.5" oninput="sr(this,'jm-jrise-v',1)"><span class="range-val" id="jm-jrise-v">2.5%</span></div>
-    <div class="info-hint">연평균 기준으로 입력 (임대차3법 2년 5% 상한 → 연 약 2.5%)</div>
-    <label style="margin-top:10px">전세 대출 금리 (연 %)</label>
-    <div class="range-row"><input type="range" id="jm-jrate" min="1" max="8" step="0.05" value="2.8" oninput="sr(this,'jm-jrate-v',2)"><span class="range-val" id="jm-jrate-v">2.80%</span></div>
-
-  </div>
-  <div class="section">
-    <div class="section-title">월세 조건</div>
-    <label>월세 보증금 (만원)</label>
-    <div class="input-unit"><input type="number" id="jm-mdeposit" value="1000" step="500"><span class="unit">만원</span></div>
-    <label>월 임대료 (만원)</label>
-    <div class="input-unit"><input type="number" id="jm-mrent" value="100" step="5"><span class="unit">만원</span></div>
-    <label>연 임대료 인상률 (%)</label>
-    <div class="range-row"><input type="range" id="jm-mrise" min="0" max="10" step="0.5" value="3" oninput="sr(this,'jm-mrise-v',1)"><span class="range-val" id="jm-mrise-v">3.0%</span></div>
-    <div class="info-hint">임대차3법 기준 2년 5% 상한</div>
-  </div>
-  <div class="section">
-    <div class="section-title">공통 가정</div>
-    <label>분석 기간 (년)</label>
-    <div class="range-row">
-      <input type="range" id="jm-years" min="1" max="20" step="1" value="5" oninput="$('jm-years-v').textContent=this.value+'년';var mn=parseFloat(this.min),mx=parseFloat(this.max),v=parseFloat(this.value);this.style.setProperty('--pct',((v-mn)/(mx-mn)*100).toFixed(1)+'%');$('jm-years-num').value=this.value;_autoJM();">
-      <span class="range-val" id="jm-years-v">5년</span>
-    </div>
-    <input type="number" id="jm-years-num" value="5" min="1" max="20" step="1" style="margin-top:4px" oninput="var v=Math.min(20,Math.max(1,+this.value||5));$('jm-years').value=v;$('jm-years-v').textContent=v+'년';_autoJM();">
-
-  </div>
-
-</div>
-<div class="split-right">
-  <div id="jm-empty" class="placeholder"><div style="font-size:32px;opacity:.3">🏘️</div><div style="font-size:13px">조건을 입력하고 비교하세요</div></div>
-  <div id="jm-content" style="display:none">
-    <div id="jm-verdict" class="result-msg"></div>
-    <div id="jm-kpi" class="dash-grid"></div>
-    <div class="chart-wrap"><div class="chart-title">연도별 월세·전세 비용 추이 (만원)</div><canvas id="chart-jm" class="chart-canvas" height="200"></canvas></div>
-    <div class="chart-wrap"><div class="chart-title">월세 유리 기준 수익률 역산 — 이 이상 운용하면 월세가 유리 (%)</div><canvas id="chart-jm2" class="chart-canvas" height="130"></canvas></div>
-    <div class="chart-wrap" style="padding:0;overflow:hidden">
-      <table class="data-table"><thead><tr><th>연도</th><th>전세 보증금</th><th>전세대출이자</th><th>월세 비용</th><th>전세유리 기준선</th></tr></thead>
-      <tbody id="jm-tbody"></tbody></table>
-    </div>
-  </div>
-</div>
-</div>
-
-
 </body>
 </html>
