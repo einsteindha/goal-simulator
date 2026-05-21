@@ -175,6 +175,9 @@ select option{background:#1e2130}
   .repay-compare{grid-template-columns:1fr 1fr}
 }
 
+
+.card-slider-row{display:flex;align-items:center;gap:6px;margin-top:4px}
+.card-slider-row input[type=range]{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -439,6 +442,17 @@ function addGoalCard(preset={}){
   };
   goalCards.push(card);
   renderGoalCardsList();
+  // 새로 추가된 카드 자동으로 열기
+  setTimeout(function(){
+    var body=document.getElementById('gcb-'+card.id);
+    if(body){
+      body.classList.add('open');
+      if(card.type==='housing'){
+        var p=document.getElementById('re-panel-'+card.id);
+        if(p&&(p.innerHTML===''||p.innerHTML==='<!-- lazy -->')) p.innerHTML=buildMiniReTable(card.id);
+      }
+    }
+  },50);
   return card;
 }
 
@@ -489,32 +503,26 @@ function renderGoalCardsList(){
       +'<div class="goal-card-body" id="gcb-'+cid+'">'
       +'<div class="input-row">'
       +'<div><label>유형</label><select data-cid="'+cid+'" data-key="type" onchange="updateCardFromSelect(this)">'+typeOpts+'</select></div>'
-      +'<div><label>이름</label><input type="text" value="'+card.name+'" data-cid="'+cid+'" data-key="name" onchange="updateCardFromInput(this)"></div>'
-      +'</div>'
-      +'<div class="input-row" style="margin-top:8px">'
-      +'<div><label>목표금액(만원)</label><input type="number" value="'+card.amount+'" step="100" data-cid="'+cid+'" data-key="amount" onchange="updateCardFromInput(this)"></div>'
-      +'<div><label>목표 기간(년)</label><input type="number" value="'+card.years+'" min="1" max="40" data-cid="'+cid+'" data-key="years" onchange="updateCardFromInput(this)"></div>'
-      +'</div>'
-      +'<div class="input-row" style="margin-top:8px">'
-      +'<div><label>현재 보유(만)</label><input type="number" value="'+card.initAsset+'" step="100" data-cid="'+cid+'" data-key="initAsset" onchange="updateCardFromInput(this)"></div>'
-      +'<div><label>월 적립(만)</label><input type="number" value="'+card.monthly+'" step="5" data-cid="'+cid+'" data-key="monthly" onchange="updateCardFromInput(this)"></div>'
+      +'<div><label>이름</label><input type="text" value="'+card.name+'" data-cid="'+cid+'" data-key="name" oninput="updateCardFromInput(this)"></div>'
       +'</div>'
       +(card.type==='housing'
-        ? '<div class="input-row" style="margin-top:8px">'
-          +'<div><label>기대 연 수익률 (%)</label><input type="number" value="'+card.nomRet+'" step="0.1" min="0" max="20" data-cid="'+cid+'" data-key="nomRet" onchange="updateCardFromInput(this)"></div>'
-          +'<div><label>표준편차 — MC변동성 (%)</label><input type="number" value="'+card.stdDev+'" step="0.5" min="0" max="30" data-cid="'+cid+'" data-key="stdDev" onchange="updateCardFromInput(this)"></div>'
-          +'</div>'
-          +'<div style="margin-top:8px"><label>부동산 연 가격상승률 (%)</label>'
-          +'<input type="number" value="'+(card.priceRise||3)+'" step="0.1" min="0" max="20" data-cid="'+cid+'" data-key="priceRise" onchange="updateCardFromInput(this)">'
-          +'</div>'
-        : '<div class="input-row" style="margin-top:8px">'
-          +'<div><label>기대 연 수익률 (%)</label><input type="number" value="'+card.nomRet+'" step="0.1" min="0" max="20" data-cid="'+cid+'" data-key="nomRet" onchange="updateCardFromInput(this)"></div>'
-          +'<div><label>표준편차 — MC변동성 (%)</label><input type="number" value="'+card.stdDev+'" step="0.5" min="0" max="30" data-cid="'+cid+'" data-key="stdDev" onchange="updateCardFromInput(this)"></div>'
-          +'</div>'
-          +'<div style="margin-top:8px"><label>연 물가상승률 (%)</label>'
-          +'<input type="number" value="'+card.inflation+'" step="0.1" min="0" max="10" data-cid="'+cid+'" data-key="inflation" onchange="updateCardFromInput(this)">'
-          +'<div style="font-size:10px;color:var(--text3);margin-top:3px">본인 포트폴리오 백테스트 또는 CFP 상담으로 도출하세요</div>'
-          +'</div>')
+        ? '<div style="margin-top:8px"><label>목표 주택 현재 매매가격 (만원)</label>'+cardSlider(cid,'housePrice',card.housePrice||card.amount,5000,1000000,1000,'만')+'</div>'
+          +'<div style="margin-top:6px"><label>목표 기간 (년)</label>'+cardSlider(cid,'years',card.years,1,30,1,'년')+'</div>'
+          +'<div style="margin-top:6px"><label>현재 보유 (만원)</label>'+cardSlider(cid,'initAsset',card.initAsset,0,500000,1000,'만')+'</div>'
+          +'<div style="margin-top:6px"><label>월 적립 (만원)</label>'+cardSlider(cid,'monthly',card.monthly,10,10000,50,'만')+'</div>'
+        : '<div style="margin-top:8px"><label>목표금액 (만원)</label>'+cardSlider(cid,'amount',card.amount,100,1000000,1000,'만')+'</div>'
+          +'<div style="margin-top:6px"><label>목표 기간 (년)</label>'+cardSlider(cid,'years',card.years,1,30,1,'년')+'</div>'
+          +'<div style="margin-top:6px"><label>현재 보유 (만원)</label>'+cardSlider(cid,'initAsset',card.initAsset,0,500000,1000,'만')+'</div>'
+          +'<div style="margin-top:6px"><label>월 적립 (만원)</label>'+cardSlider(cid,'monthly',card.monthly,10,10000,50,'만')+'</div>')
+      +(card.type==='housing'
+        ? '<div style="margin-top:8px"><label>기대 연 수익률 (%)</label>'+cardSlider(cid,'nomRet',card.nomRet,0,20,0.5,'%')+'</div>'
+          +'<div style="margin-top:6px"><label>표준편차 — MC변동성 (%)</label>'+cardSlider(cid,'stdDev',card.stdDev,1,30,0.5,'%')+'</div>'
+          +'<div style="margin-top:3px;font-size:10px;color:var(--text3)">백테스트 또는 CFP 상담으로 도출하세요</div>'
+          +'<div style="margin-top:8px"><label>부동산 연 가격상승률 (%)</label>'+cardSlider(cid,'priceRise',card.priceRise||3,0,15,0.5,'%')+'</div>'
+        : '<div style="margin-top:8px"><label>기대 연 수익률 (%)</label>'+cardSlider(cid,'nomRet',card.nomRet,0,20,0.5,'%')+'</div>'
+          +'<div style="margin-top:6px"><label>표준편차 — MC변동성 (%)</label>'+cardSlider(cid,'stdDev',card.stdDev,1,30,0.5,'%')+'</div>'
+          +'<div style="margin-top:3px;font-size:10px;color:var(--text3)">백테스트 또는 CFP 상담으로 도출하세요</div>'
+          +'<div style="margin-top:8px"><label>연 물가상승률 (%)</label>'+cardSlider(cid,'inflation',card.inflation,0,10,0.5,'%')+'</div>')
       +(card.type==='housing'
         ? '<div id="re-panel-'+cid+'" style="margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px"><!-- lazy --></div>'
         : '')
@@ -540,8 +548,15 @@ function updateCardFromSelect(el){
 }
 function updateCardFromInput(el){
   var cid=+el.getAttribute('data-cid'),key=el.getAttribute('data-key');
-  var v=el.type==='number'?+el.value:el.value;
-  updateCard(cid,key,v);
+  if(el.type==='number'){
+    // 입력 중 (빈값, 마이너스만, 소수점만) 은 무시
+    if(el.value===''||el.value==='-'||el.value==='.') return;
+    var v=parseFloat(el.value);
+    if(isNaN(v)) return;
+    updateCard(cid,key,v);
+  } else {
+    updateCard(cid,key,el.value);
+  }
   _autoGoals();
 }
 function updateFutureIncome(){
@@ -1109,6 +1124,46 @@ function toggleRePanel(cid){
   if(p&&(p.innerHTML===''||p.innerHTML==='<!-- lazy -->')) p.innerHTML=buildMiniReTable(cid);
 }
 
+function cardSlider(cid, key, val, min, max, step, unit){
+  var sid='cs-'+cid+'-'+key;
+  var nid='cn-'+cid+'-'+key;
+  var pct=((val-min)/(max-min)*100).toFixed(1);
+  return '<div class="card-slider-row">'
+    +'<input type="range" id="'+sid+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'"'
+    +' style="--pct:'+pct+'%"'
+    +' data-nid="'+nid+'" data-cid="'+cid+'" data-key="'+key+'"'
+    +' oninput="syncCardSlider(this)">'
+    +'<input type="number" id="'+nid+'" value="'+val+'" min="'+min+'" max="'+max+'" step="'+step+'"'
+    +' style="width:52px;padding:3px 5px;text-align:right;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;font-family:monospace"'
+    +' data-sid="'+sid+'" data-cid="'+cid+'" data-key="'+key+'"'
+    +' oninput="syncCardNumber(this)">'
+    +'<span style="font-size:11px;color:var(--text3);min-width:14px">'+unit+'</span>'
+    +'</div>';
+}
+function syncCardSlider(slider){
+  var v=parseFloat(slider.value);
+  var mn=parseFloat(slider.min),mx=parseFloat(slider.max);
+  slider.style.setProperty('--pct',((v-mn)/(mx-mn)*100).toFixed(1)+'%');
+  var ni=document.getElementById(slider.getAttribute('data-nid'));
+  if(ni) ni.value=v;
+  updateCard(+slider.getAttribute('data-cid'), slider.getAttribute('data-key'), v);
+  _autoGoals();
+}
+function syncCardNumber(input){
+  if(input.value===''||input.value==='-'||input.value==='.') return;
+  var v=parseFloat(input.value);
+  if(isNaN(v)) return;
+  var sl=document.getElementById(input.getAttribute('data-sid'));
+  if(sl){
+    var mn=parseFloat(sl.min),mx=parseFloat(sl.max);
+    var clamped=Math.min(mx,Math.max(mn,v));
+    sl.value=clamped;
+    sl.style.setProperty('--pct',((clamped-mn)/(mx-mn)*100).toFixed(1)+'%');
+  }
+  updateCard(+input.getAttribute('data-cid'), input.getAttribute('data-key'), v);
+  _autoGoals();
+}
+
 // ══ INIT ══
 initSliders();updateReal();
 // 기본 목적자금 카드 2개
@@ -1119,6 +1174,8 @@ addGoalCard({type:'housing',name:'주택 구입',housePrice:80000,amount:80000,y
 setTimeout(function(){
   runAllGoals();
   updateFutureIncome();
+  runHousing();
+  runJeonseMonth();
 }, 200);
 
 
