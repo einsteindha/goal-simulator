@@ -721,7 +721,7 @@ function renderGoalsDashboard(){
   $('goals-dash').innerHTML=`
     <div class="dash-card ${allOk?'':''}"><div class="dash-label">총 월 적립액</div><div class="dash-value" style="color:var(--blue)">${wan(totalMonthly)}</div><div class="dash-sub">목적자금 ${goalCards.length}개 합산</div></div>
     <div class="dash-card"><div class="dash-label">달성 필요 월 적립</div><div class="dash-value" style="color:${totalNeeded<=totalMonthly?'var(--green)':'var(--amber)'}">${wan(totalNeeded)}</div><div class="dash-sub">${totalNeeded<=totalMonthly?'✓ 현재 적립으로 충분':'추가 '+wan(totalNeeded-totalMonthly)+' 필요'}</div></div>
-    <div class="dash-card"><div class="dash-label">평균 MC 성공률</div><div class="dash-value" style="color:${avgMC>=70?'var(--green)':avgMC>=50?'var(--amber)':'var(--red)'}">${avgMC.toFixed(1)}%</div><div class="dash-sub">${goalCards.length}개 목적자금 평균</div></div>`;
+    `;
 }
 
 function renderGoalsTimeline(){
