@@ -290,7 +290,18 @@ select option{background:#1e2130}
     <div class="info-hint">2024년 2단계 스트레스DSR 수도권 0.38%p</div>
     <div class="input-row" style="margin-top:9px">
       <div><label>대출 기간</label>
-        <select id="h-term" onchange="_autoHousing();"><option value="10">10년</option><option value="20">20년</option><option value="30" selected>30년</option><option value="35">35년</option><option value="40">40년</option></select>
+        <div class="range-row">
+          <input type="range" id="h-term" min="1" max="50" step="1" value="30"
+            oninput="sr(this,'h-term-v',0,'년');document.getElementById('h-term-num').value=this.value;_autoHousing();">
+          <span class="range-val" id="h-term-v">30년</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+          <input type="number" id="h-term-num" value="30" min="1" max="50" step="1"
+            style="width:60px;padding:4px 6px;text-align:right;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;font-family:monospace"
+            oninput="var v=Math.min(50,Math.max(1,+this.value||30));document.getElementById('h-term').value=v;document.getElementById('h-term-v').textContent=v+'년';var el=document.getElementById('h-term');el.style.setProperty('--pct',((v-1)/49*100).toFixed(1)+'%');_autoHousing();"
+            onblur="if(!this.value||+this.value<1)this.value=1;else if(+this.value>50)this.value=50;">
+          <span style="font-size:11px;color:var(--text3)">년</span>
+        </div>
       </div>
       <div><label>혼합형 거치</label>
         <select id="h-grace" onchange="_autoHousing();"><option value="0" selected>없음</option><option value="1">1년</option><option value="3">3년</option><option value="5">5년</option></select>
@@ -396,11 +407,10 @@ const wan=n=>Math.abs(n)>=10000?fmt(n/10000,1)+'억':fmt(n)+'만';
 const fmtPct=(n,d=1)=>n.toFixed(d)+'%';
 
 // ══ SLIDERS ══
-function sr(el,vid,dec){
-  const v=parseFloat(el.value);$(vid).textContent=v.toFixed(dec)+'%';
+function sr(el,vid,dec,unit){
+  const v=parseFloat(el.value);$(vid).textContent=v.toFixed(dec)+(unit||'%');
   const mn=parseFloat(el.min),mx=parseFloat(el.max);
   el.style.setProperty('--pct',((v-mn)/(mx-mn)*100).toFixed(1)+'%');
-
 }
 function initSliders(){
   document.querySelectorAll('input[type=range]').forEach(el=>{
@@ -538,11 +548,11 @@ function renderGoalCardsList(){
       +'</div>'
       +(card.type==='housing'
         ? '<div style="margin-top:8px"><label>목표 주택 현재 매매가격 (만원)</label>'+cardSlider(cid,'housePrice',card.housePrice||card.amount,5000,1000000,1000,'만')+'</div>'
-          +'<div style="margin-top:6px"><label>목표 기간 (년)</label>'+cardSlider(cid,'years',card.years,1,30,1,'년')+'</div>'
+          +'<div style="margin-top:6px"><label>목표 기간 (년)</label>'+cardSlider(cid,'years',card.years,1,100,1,'년')+'</div>'
           +'<div style="margin-top:6px"><label>현재 보유 (만원)</label>'+cardSlider(cid,'initAsset',card.initAsset,0,500000,1000,'만')+'</div>'
           +'<div style="margin-top:6px"><label>월 적립 (만원)</label>'+cardSlider(cid,'monthly',card.monthly,10,10000,50,'만')+'</div>'
         : '<div style="margin-top:8px"><label>목표금액 (만원)</label>'+cardSlider(cid,'amount',card.amount,100,1000000,1000,'만')+'</div>'
-          +'<div style="margin-top:6px"><label>목표 기간 (년)</label>'+cardSlider(cid,'years',card.years,1,30,1,'년')+'</div>'
+          +'<div style="margin-top:6px"><label>목표 기간 (년)</label>'+cardSlider(cid,'years',card.years,1,100,1,'년')+'</div>'
           +'<div style="margin-top:6px"><label>현재 보유 (만원)</label>'+cardSlider(cid,'initAsset',card.initAsset,0,500000,1000,'만')+'</div>'
           +'<div style="margin-top:6px"><label>월 적립 (만원)</label>'+cardSlider(cid,'monthly',card.monthly,10,10000,50,'만')+'</div>')
       +(card.type==='housing'
@@ -1282,6 +1292,8 @@ function syncCardNumberBlur(input){
 
 // ══ INIT ══
 initSliders();updateReal();
+// h-term 슬라이더 초기 --pct
+(function(){var el=document.getElementById('h-term');if(el){var v=parseFloat(el.value),mn=parseFloat(el.min),mx=parseFloat(el.max);el.style.setProperty('--pct',((v-mn)/(mx-mn)*100).toFixed(1)+'%');}})();
 // 기본 목적자금 카드 2개
 updateFutureIncome();
 addGoalCard({type:'general',name:'목적자금',amount:3000,years:5,initAsset:500,monthly:30,nomRet:5,inflation:2.5,stdDev:8});
