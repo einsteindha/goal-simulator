@@ -178,6 +178,19 @@ select option{background:#1e2130}
 
 .card-slider-row{display:flex;align-items:center;gap:6px;margin-top:4px}
 .card-slider-row input[type=range]{flex:1;min-width:0}
+.cs-preview{font-size:11px;color:var(--teal);font-family:'DM Mono',monospace;min-width:36px;text-align:right;white-space:nowrap}
+/* 소득 미입력 경고 */
+#h-income-section.income-warn{border-color:rgba(248,113,113,.5);background:rgba(248,113,113,.06)}
+#h-income-section.income-warn .section-title{color:var(--red)}
+#h-income-section.income-warn label{color:#f9a8a8}
+#h-income-section.income-warn input{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.08)}
+#housing-content.income-warn .gauge-card,
+#housing-content.income-warn .repay-card,
+#housing-content.income-warn #h-summary,
+#housing-content.income-warn .chart-wrap,
+#housing-content.income-warn .data-table{opacity:.25;pointer-events:none}
+#h-income-notice{display:none;margin:12px 0;padding:14px 16px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.35);border-radius:var(--radius-lg);text-align:center}
+#h-income-notice.show{display:block}
 </style>
 </head>
 <body>
@@ -257,10 +270,10 @@ select option{background:#1e2130}
     </select>
   </div>
 
-  <div class="section">
+  <div class="section" id="h-income-section">
     <div class="section-title">소득 & 기존 부채</div>
     <label>현재 연 소득 (만원)</label>
-    <div class="input-unit"><input type="number" id="h-income" oninput="updateFutureIncome();_autoHousing();" value="7000" step="100" oninput="updateFutureIncome()"><span class="unit">만원</span></div>
+    <div class="input-unit"><input type="number" id="h-income" oninput="updateFutureIncome();_autoHousing();" value="0" step="100" oninput="updateFutureIncome()"><span class="unit">만원</span></div>
     <div id="h-income-future-box" class="info-hint" style="margin-top:4px"></div>
     <label>기존 주담대 월 상환 (만원)</label>
     <div class="input-unit"><input type="number" id="h-exist-m" oninput="_autoHousing();" value="0" step="5"><span class="unit">만원</span></div>
@@ -291,6 +304,7 @@ select option{background:#1e2130}
 <div class="split-right">
   <div id="housing-empty" class="placeholder"><div style="font-size:32px;opacity:.3">🏠</div><div style="font-size:13px">대출 분석을 실행하세요</div></div>
   <div id="housing-content" style="display:none">
+    <div id="h-income-notice"><span style="font-size:22px">💡</span><br><span style="font-size:13px;font-weight:700;color:var(--red)">연 소득을 입력해 주세요</span><br><span style="font-size:11px;color:var(--text2);margin-top:4px;display:block">DSR · 스트레스DSR · DTI 한도 계산에 소득이 필요합니다</span></div>
     <div id="h-gauge-area" class="gauge-grid"></div>
     <div id="h-summary" class="result-msg"></div>
     <div id="h-repay-compare" class="repay-compare"></div>
@@ -543,7 +557,7 @@ function renderGoalCardsList(){
       +(card.type==='housing'
         ? '<div id="re-panel-'+cid+'" style="margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px"><!-- lazy --></div>'
         : '')
-      +resHtml
+      +'<div id="gcr-'+cid+'">'+resHtml+'</div>'
       +'</div></div>';
   });
   list.innerHTML=out;
@@ -558,6 +572,31 @@ function renderGoalCardsList(){
       if(p&&(p.innerHTML==='<!-- lazy -->'||p.innerHTML==='')) p.innerHTML=buildMiniReTable(card.id);
     }
   });
+}
+function updateGoalCardResults(){
+  var listEl=$('goal-cards-list');
+  if(!listEl||goalCards.length===0){renderGoalCardsList();return;}
+  var anyMissing=goalCards.some(function(c){return !document.getElementById('gc-'+c.id);});
+  if(anyMissing){renderGoalCardsList();return;}
+  goalCards.forEach(function(card){
+    var resEl=document.getElementById('gcr-'+card.id);
+    if(!resEl)return;
+    var res=card.result;
+    if(!res){resEl.innerHTML='';return;}
+    var rc=res.det.achieved?'var(--green)':'var(--amber)';
+    var mc_c=res.mc.successRate>=70?'var(--green)':res.mc.successRate>=50?'var(--amber)':'var(--red)';
+    if(card.type==='housing'){
+      var hp2=card.housePrice||card.amount||0;
+      var pr2=(card.priceRise||3)/100;
+      var fhp2=Math.round(hp2*Math.pow(1+pr2,card.years)/100)*100;
+      var le2=Math.max(0,fhp2-res.det.finalAsset);
+      resEl.innerHTML='<div style="margin-top:8px;font-size:11px;padding:7px 10px;background:var(--bg3);border-radius:6px">예상 자기자금 <b style="color:'+rc+'">'+wan(res.det.finalAsset)+'</b> / 미래 매매가 <b>'+wan(fhp2)+'</b><br>예상 필요 대출: <b style="color:'+(le2>0?'var(--red)':'var(--green)')+'">'+(le2>0?wan(le2):'불필요')+'</b></div>';
+    } else {
+      resEl.innerHTML='<div style="margin-top:8px;font-size:11px;padding:7px 10px;background:var(--bg3);border-radius:6px">결정론적: <b style="color:'+rc+'">'+wan(res.det.finalAsset)+'</b> (목표 '+wan(res.det.goalFV)+') MC성공률: <b style="color:'+mc_c+'">'+res.mc.successRate.toFixed(1)+'%</b></div>';
+    }
+  });
+  $('goals-empty').style.display='none';
+  $('goals-content').style.display='block';
 }
 function updateCardFromSelect(el){
   var cid=+el.getAttribute('data-cid'),key=el.getAttribute('data-key');
@@ -702,7 +741,7 @@ function runAllGoals(){
       +'<span style="color:var(--text3);font-size:10px">MC 하위10%(보수적)='+wan(r.mc.pct(10))+' / 보수적 대출 필요: '+wan(Math.max(0,futureHP2-r.mc.pct(10)))+'</span>';
   }
 
-  renderGoalCardsList();
+  updateGoalCardResults();
   renderGoalsDashboard();
   renderGoalsTimeline();
   renderGoalDetailTabs();
@@ -869,7 +908,14 @@ function aggY(sched){
 function runHousing(){
   const price=+$('h-price').value||80000,equity=+$('h-equity').value||30000;
   const zone=$('h-zone').value,htype=$('h-htype').value;
-  const incomeNow=+$('h-income').value||7000;
+  const incomeNow=+$('h-income').value||0;
+  // 소득 미입력 경고 토글
+  const noIncome=(incomeNow===0);
+  const incSec=$('h-income-section'),hCont=$('housing-content'),notice=$('h-income-notice');
+  if(incSec){incSec.classList.toggle('income-warn',noIncome);}
+  if(hCont){hCont.classList.toggle('income-warn',noIncome);}
+  if(notice){notice.classList.toggle('show',noIncome);}
+  if(noIncome){$('housing-empty').style.display='none';$('housing-content').style.display='block';return;}
   const incomeGrowth=parseFloat($('g-income-growth').value)/100||0.02;
   // 주택 목표기간: lastHousingEquity에서 가져오거나 기본 7년
   const housingYears=lastHousingEquity?lastHousingEquity.years:7;
@@ -1150,18 +1196,33 @@ function toggleRePanel(cid){
 function cardSlider(cid, key, val, min, max, step, unit){
   var sid='cs-'+cid+'-'+key;
   var nid='cn-'+cid+'-'+key;
+  var pvid='cp-'+cid+'-'+key;
   var pct=((val-min)/(max-min)*100).toFixed(1);
+  var showPreview=(unit==='만');
+  var suffixHtml=showPreview
+    ? '<span style="font-size:11px;color:var(--text3);min-width:14px">만</span>'
+      +'<span id="'+pvid+'" class="cs-preview">'+csPreviewText(val)+'</span>'
+    : '<span style="font-size:11px;color:var(--text3);min-width:14px">'+unit+'</span>';
   return '<div class="card-slider-row">'
     +'<input type="range" id="'+sid+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'"'
     +' style="--pct:'+pct+'%"'
     +' data-nid="'+nid+'" data-cid="'+cid+'" data-key="'+key+'"'
+    +' data-pvid="'+pvid+'" data-showpv="'+(showPreview?'1':'0')+'"'
     +' oninput="syncCardSlider(this)">'
     +'<input type="number" id="'+nid+'" value="'+val+'" min="'+min+'" max="'+max+'" step="'+step+'"'
-    +' style="width:52px;padding:3px 5px;text-align:right;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;font-family:monospace"'
+    +' style="width:72px;padding:3px 6px;text-align:right;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;font-family:monospace"'
     +' data-sid="'+sid+'" data-cid="'+cid+'" data-key="'+key+'"'
-    +' oninput="syncCardNumber(this)">'
-    +'<span style="font-size:11px;color:var(--text3);min-width:14px">'+unit+'</span>'
+    +' data-pvid="'+pvid+'" data-showpv="'+(showPreview?'1':'0')+'"'
+    +' oninput="syncCardNumber(this)" onblur="syncCardNumberBlur(this)">'
+    +suffixHtml
     +'</div>';
+}
+function csPreviewText(v){
+  v=parseFloat(v)||0;
+  if(v===0) return '';
+  if(v>=100000000) return (v/100000000).toFixed(2)+'조';
+  if(v>=10000) return (v/10000).toFixed(v%10000===0?0:1)+'억';
+  return v+'만';
 }
 function syncCardSlider(slider){
   var v=parseFloat(slider.value);
@@ -1169,19 +1230,51 @@ function syncCardSlider(slider){
   slider.style.setProperty('--pct',((v-mn)/(mx-mn)*100).toFixed(1)+'%');
   var ni=document.getElementById(slider.getAttribute('data-nid'));
   if(ni) ni.value=v;
+  var pvid=slider.getAttribute('data-pvid');
+  if(slider.getAttribute('data-showpv')==='1'&&pvid){
+    var pv=document.getElementById(pvid);
+    if(pv) pv.textContent=csPreviewText(v);
+  }
   updateCard(+slider.getAttribute('data-cid'), slider.getAttribute('data-key'), v);
   _autoGoals();
 }
 function syncCardNumber(input){
-  if(input.value===''||input.value==='-'||input.value==='.') return;
-  var v=parseFloat(input.value);
+  var raw=input.value;
+  if(raw===''||raw==='-'||raw==='.') return;
+  var v=parseFloat(raw);
   if(isNaN(v)) return;
   var sl=document.getElementById(input.getAttribute('data-sid'));
   if(sl){
     var mn=parseFloat(sl.min),mx=parseFloat(sl.max);
-    var clamped=Math.min(mx,Math.max(mn,v));
-    sl.value=clamped;
-    sl.style.setProperty('--pct',((clamped-mn)/(mx-mn)*100).toFixed(1)+'%');
+    var vis=Math.min(mx,Math.max(mn,v));
+    sl.value=vis;
+    sl.style.setProperty('--pct',((vis-mn)/(mx-mn)*100).toFixed(1)+'%');
+  }
+  var pvid=input.getAttribute('data-pvid');
+  if(input.getAttribute('data-showpv')==='1'&&pvid){
+    var pv=document.getElementById(pvid);
+    if(pv) pv.textContent=csPreviewText(v);
+  }
+  updateCard(+input.getAttribute('data-cid'), input.getAttribute('data-key'), v);
+  _autoGoals();
+}
+function syncCardNumberBlur(input){
+  var raw=input.value;
+  if(raw===''||raw==='-'||raw==='.'){input.value=parseFloat(input.min)||0;raw=input.value;}
+  var v=parseFloat(raw);
+  if(isNaN(v)) v=parseFloat(input.min)||0;
+  var sl=document.getElementById(input.getAttribute('data-sid'));
+  if(sl){
+    var mn=parseFloat(sl.min),mx=parseFloat(sl.max);
+    v=Math.min(mx,Math.max(mn,v));
+    input.value=v;
+    sl.value=v;
+    sl.style.setProperty('--pct',((v-mn)/(mx-mn)*100).toFixed(1)+'%');
+  }
+  var pvid=input.getAttribute('data-pvid');
+  if(input.getAttribute('data-showpv')==='1'&&pvid){
+    var pv=document.getElementById(pvid);
+    if(pv) pv.textContent=csPreviewText(v);
   }
   updateCard(+input.getAttribute('data-cid'), input.getAttribute('data-key'), v);
   _autoGoals();
