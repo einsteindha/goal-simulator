@@ -180,6 +180,12 @@ select option{background:#1e2130}
 .card-slider-row input[type=range]{flex:1;min-width:0}
 .cs-preview{font-size:11px;color:var(--teal);font-family:'DM Mono',monospace;min-width:36px;text-align:right;white-space:nowrap}
 .fw-bold{font-weight:700}
+/* 토허제 경고 배너 */
+#toher-notice{display:none;margin:10px 0;padding:12px 14px;border-radius:var(--radius-lg);font-size:11px;line-height:1.8}
+#toher-notice.show{display:block}
+#toher-notice.toher-block{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);color:#fca5a5}
+#toher-notice.toher-cond{background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fcd34d}
+#toher-notice.toher-ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);color:#86efac}
 /* 소득 미입력 경고 */
 #h-income-section.income-warn{border-color:rgba(248,113,113,.5);background:rgba(248,113,113,.06)}
 #h-income-section.income-warn .section-title{color:var(--red)}
@@ -281,15 +287,21 @@ select option{background:#1e2130}
     <div class="info-hint" id="h-deposit-hint">※ 입력 시 LTV 한도 계산에서 차감됩니다 (금감원 규정)</div>
     <label>지역 구분</label>
     <select id="h-zone" onchange="_autoHousing();">
+      <option value="toher">토지거래허가구역 (토허제)</option>
       <option value="speculate">투기지역 / 투기과열지구</option>
       <option value="adjust" selected>조정대상지역</option>
       <option value="normal">일반 지역</option>
     </select>
-    <label>주택 유형</label>
+    <label>매수인 주택 보유</label>
     <select id="h-htype" onchange="_autoHousing();">
-      <option value="first" selected>무주택자 (첫 주택)</option>
-      <option value="replace">1주택 처분 조건부</option>
+      <option value="first" selected>무주택자</option>
+      <option value="replace">1주택자</option>
       <option value="multi">다주택자</option>
+    </select>
+    <label>세입자 여부 <span style="font-size:10px;font-weight:400;color:var(--text3)">— 토허제 적용 시 판단 기준</span></label>
+    <select id="h-tenant-yn" onchange="_autoHousing();">
+      <option value="no" selected>세입자 없음</option>
+      <option value="yes">세입자 있음</option>
     </select>
   </div>
 
@@ -338,6 +350,7 @@ select option{background:#1e2130}
 <div class="split-right">
   <div id="housing-empty" class="placeholder"><div style="font-size:32px;opacity:.3">🏠</div><div style="font-size:13px">대출 분석을 실행하세요</div></div>
   <div id="housing-content" style="display:none">
+    <div id="toher-notice"></div>
     <div id="h-income-notice"><span style="font-size:22px">💡</span><br><span style="font-size:13px;font-weight:700;color:var(--red)">연 소득을 입력해 주세요</span><br><span style="font-size:11px;color:var(--text2);margin-top:4px;display:block">DSR · 스트레스DSR · DTI 한도 계산에 소득이 필요합니다</span></div>
     <div id="h-gauge-area" class="gauge-grid"></div>
     <div id="h-summary" class="result-msg"></div>
@@ -398,9 +411,9 @@ select option{background:#1e2130}
 
     <label style="margin-top:10px">보유 기간 (년)</label>
     <div class="range-row">
-      <input type="range" id="gf-hold" min="1" max="10" step="1" value="0"
-        oninput="var _v=+this.value,_mx=+this.max;document.getElementById('gf-hold-v').textContent=(_v>=_mx?_v+'년이상':_v+'년');document.getElementById('gf-hold-num').value=_v;this.style.setProperty('--pct',((_v-1)/(_mx-1)*100).toFixed(1)+'%');_autoGift();">
-      <span class="range-val" id="gf-hold-v">0년</span>
+      <input type="range" id="gf-hold" min="0" max="11" step="1" value="0"
+        oninput="var _v=+this.value,_mx=11;document.getElementById('gf-hold-v').textContent=gfHoldLabel(_v);document.getElementById('gf-hold-num').value=_v;this.style.setProperty('--pct',(_v/11*100).toFixed(1)+'%');_autoGift();">
+      <span class="range-val" id="gf-hold-v">1년이내</span>
     </div>
     <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
       <input type="number" id="gf-hold-num" value="" min="1" max="10"
@@ -1072,7 +1085,7 @@ function renderFirstGoalChart(){
 // ══════════════════════════════════
 // HOUSING
 // ══════════════════════════════════
-const LTV={speculate:{first:40,replace:40,multi:30},adjust:{first:70,replace:60,multi:50},normal:{first:80,replace:80,multi:60}};
+const LTV={toher:{first:40,replace:40,multi:30},speculate:{first:40,replace:40,multi:30},adjust:{first:70,replace:60,multi:50},normal:{first:80,replace:80,multi:60}};
 let chartAmort=null,chartBalance=null;
 
 function mpi(P,r,n){if(r===0)return P/n;const mr=r/12;return P*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1)}
@@ -1114,6 +1127,43 @@ function aggY(sched){
 function runHousing(){
   const price=+$('h-price').value||80000,equity=+$('h-equity').value||30000;
   const zone=$('h-zone').value,htype=$('h-htype').value;
+  const tenantYn=$('h-tenant-yn')?$('h-tenant-yn').value:'no';
+
+  // ── 토허제 거래 가능 여부 판단 (2026.5.12 국토부 대책) ──
+  // housing-content를 먼저 표시해야 배너가 보임
+  $('housing-empty').style.display='none';
+  $('housing-content').style.display='block';
+  (function(){
+    var box=$('toher-notice');
+    if(!box) return;
+    box.className=''; // 클래스 초기화
+    box.style.display='none';
+    if(zone!=='toher') return;
+
+    var isUnowned=(htype==='first');
+    var is1house=(htype==='replace');
+    var hasTenant=(tenantYn==='yes');
+    var cls, msg;
+
+    if(isUnowned){
+      cls='toher-ok';
+      msg='✅ <b>토허제 — 거래 가능</b>'+(hasTenant?' (무주택 + 세입자 있음)':' (무주택 + 세입자 없음)')
+        +'<br><span style="opacity:.85">실거주 의무: 임대차 최초 계약 종료일까지 유예 (2026.5.12 대책)</span>';
+    } else if(is1house){
+      cls='toher-cond';
+      msg='⚠ <b>토허제 — 조건부 거래 가능</b>'+(hasTenant?' (1주택 + 세입자 있음)':' (1주택 + 세입자 없음)')
+        +'<br>• 허가일로부터 <b>4개월 이내 입주</b> 의무'
+        +(hasTenant?'<br>• <b>4개월 이내 세입자 퇴거</b> 필요':'')
+        +'<br><span style="opacity:.75;font-size:10px">조건 미충족 시 허가 취소 가능 (2026.5.12 대책)</span>';
+    } else {
+      cls='toher-block';
+      msg='🚫 <b>토허제 — 거래 불가</b> (다주택자)<br>토지거래허가구역 내 다주택자 주택 취득 불가'
+        +'<br><span style="opacity:.75;font-size:10px">※ 아래 세금 계산은 참고용으로만 표시됩니다 (2026.5.12 국토부 대책)</span>';
+    }
+    box.className='show '+cls;
+    box.style.display='block';
+    box.innerHTML=msg;
+  })();
   const incomeNow=+$('h-income').value||0;
   // 소득 미입력 경고 토글
   const noIncome=(incomeNow===0);
@@ -1121,7 +1171,7 @@ function runHousing(){
   if(incSec){incSec.classList.toggle('income-warn',noIncome);}
   if(hCont){hCont.classList.toggle('income-warn',noIncome);}
   if(notice){notice.classList.toggle('show',noIncome);}
-  if(noIncome){$('housing-empty').style.display='none';$('housing-content').style.display='block';return;}
+  if(noIncome){return;}
   const incomeGrowth=parseFloat($('g-income-growth').value)/100||0.02;
   // 주택 목표기간: lastHousingEquity에서 가져오거나 기본 7년
   const housingYears=lastHousingEquity?lastHousingEquity.years:7;
@@ -1543,9 +1593,9 @@ function gfUpdateHoldLive(){
   // 보유기간 슬라이더
   var holdSl=document.getElementById('gf-hold');
   var holdNum=document.getElementById('gf-hold-num');
-  var holdMax=isBuilding?15:10;
+  var holdMax=isBuilding?9:11; // 건물: 슬라이더 9(=9년)에서 장특공제 30% 상한, 주택: 11(10년이상)
   if(holdSl){
-    holdSl.max=holdMax;
+    holdSl.max=holdMax; // 슬라이더 max 업데이트 (인덱스 기준)
     if(+holdSl.value>holdMax){holdSl.value=holdMax;}
     var v=+holdSl.value||1;
     holdSl.style.setProperty('--pct',((v-1)/(holdMax-1)*100).toFixed(1)+'%');
@@ -1573,6 +1623,19 @@ function gfUpdateHoldLive(){
   if(lv) lv.style.opacity=opacity;
   if(isBuilding && liveSl) liveSl.value=0;
   if(isBuilding && liveNum) liveNum.value='';
+}
+// 보유기간 슬라이더 표시 라벨 (0=1년이내, 1=2년이내, 2=2년, ..., 11=10년이상)
+function gfHoldLabel(v){
+  if(v===0) return '1년이내';
+  if(v===1) return '2년이내';
+  if(v===11) return '10년이상';
+  return v+'년';
+}
+// 슬라이더 값 → 실제 보유년수 (세율 계산용)
+function gfHoldYears(v){
+  if(v===0) return 0.5;  // 1년이내 대표값
+  if(v===1) return 1.5;  // 2년이내 대표값
+  return v;              // 2~10, 10이상은 10
 }
 function gfToggleBuyerHouse(){
   var bt=document.getElementById('gf-buyer-type');
@@ -1756,8 +1819,9 @@ function calcTransferTax(market, cost, debt, hold, live, htype, assettype){
   const basicDed = 250;
   const taxable = Math.max(0, taxableGain - deductAmt - basicDed);
 
-  // 양도세 일반세율 누진
-  function transRate(v){
+  // 양도세 세율 (단기: 1년미만 70%, 1~2년미만 60%, 일반세율 적용)
+  // hold < 1: 1년미만, hold < 2: 2년미만 (is1HouseExempt는 이미 false인 경우만 옴)
+  function generalRate(v){
     if(v<=14000) return v*0.06;
     if(v<=50000) return 840+(v-14000)*0.15;
     if(v<=88000) return 6240+(v-50000)*0.24;
@@ -1766,14 +1830,25 @@ function calcTransferTax(market, cost, debt, hold, live, htype, assettype){
     if(v<=500000)return 94060+(v-300000)*0.40;
     return 174060+(v-500000)*0.42;
   }
-  const tax = transRate(taxable);
+  let tax, rateNote='';
+  if(!is1HouseExempt && hold < 1){
+    // 1년 미만: 70% 단일세율 (주택 기준)
+    tax = taxable * 0.70;
+    rateNote = '단기(1년미만) 70%';
+  } else if(!is1HouseExempt && hold < 2){
+    // 1~2년 미만: 60% 단일세율 (주택), 일반건물은 일반세율
+    if(isHouse){ tax = taxable * 0.60; rateNote = '단기(2년미만) 60%'; }
+    else { tax = generalRate(taxable); rateNote = '일반세율'; }
+  } else {
+    tax = generalRate(taxable); rateNote = '일반누진세율';
+  }
   const localTax = tax * 0.1;
 
   // 다주택 중과 (현재 2026.5.9까지 유예 중 → 유예 안내만)
   const surcharge = htype==='multi2'?20: htype==='multi3'?30:0;
 
   return {ratio, gain, lhdc, lhdcType, deductAmt, taxable, tax, localTax,
-          total: tax+localTax, surcharge, isHighPrice, is1House, is1HouseExempt, exemptGain};
+          total: tax+localTax, surcharge, isHighPrice, is1House, is1HouseExempt, exemptGain, rateNote};
 }
 
 function runGift(){
@@ -1782,7 +1857,8 @@ function runGift(){
   const cost   = +$('gf-cost').value||0;
   const type   = 'burden'; // 3가지 비교: 상세는 부담부 기준, 비교카드에서 전체 표시
   const debt   = +$('gf-debt').value||0;
-  const hold   = +$('gf-hold').value||0;
+  const holdIdx= +$('gf-hold').value||0; // 슬라이더 인덱스
+  const hold   = gfHoldYears(holdIdx);    // 실제 년수
   const live   = +$('gf-live').value||0;
   const rel    = $('gf-rel').value;
   const prior  = +$('gf-prior').value||0;
