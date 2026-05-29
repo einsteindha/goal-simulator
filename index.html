@@ -102,7 +102,7 @@ select option{background:#1e2130}
 .panel{display:none}.panel.active{display:block}
 .chart-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:12px}
 .chart-title{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px}
-.chart-canvas{width:100%!important}
+.chart-canvas{width:100%!important;max-height:280px}
 .result-msg{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:12px;font-size:12px;line-height:1.9;color:var(--text2)}
 .result-msg b{color:var(--text)}
 .data-table{width:100%;border-collapse:collapse;font-size:11px}
@@ -179,6 +179,7 @@ select option{background:#1e2130}
 .card-slider-row{display:flex;align-items:center;gap:6px;margin-top:4px}
 .card-slider-row input[type=range]{flex:1;min-width:0}
 .cs-preview{font-size:11px;color:var(--teal);font-family:'DM Mono',monospace;min-width:36px;text-align:right;white-space:nowrap}
+.fw-bold{font-weight:700}
 /* 소득 미입력 경고 */
 #h-income-section.income-warn{border-color:rgba(248,113,113,.5);background:rgba(248,113,113,.06)}
 #h-income-section.income-warn .section-title{color:var(--red)}
@@ -191,6 +192,24 @@ select option{background:#1e2130}
 #housing-content.income-warn .data-table{opacity:.25;pointer-events:none}
 #h-income-notice{display:none;margin:12px 0;padding:14px 16px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.35);border-radius:var(--radius-lg);text-align:center}
 #h-income-notice.show{display:block}
+/* 3방법 비교 패널 */
+.compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.compare-card{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:12px;position:relative;transition:border-color .2s}
+.compare-card.best{border-color:var(--green);box-shadow:0 0 0 1px rgba(34,200,122,.25)}
+.compare-card.worst{opacity:.65}
+.compare-title{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.compare-badge{font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700}
+.cb-best{background:rgba(34,200,122,.2);color:var(--green)}
+.cb-worst{background:rgba(248,113,113,.15);color:var(--red)}
+.compare-rows{font-size:10px;color:var(--text2);line-height:1.9}
+.compare-total{font-size:14px;font-weight:700;font-family:'DM Mono',monospace;margin-top:8px;padding-top:6px;border-top:1px solid var(--border)}
+.compare-note{font-size:9px;color:var(--text3);margin-top:4px;line-height:1.6}
+.gift-warn-box{padding:11px 14px;border-radius:var(--radius);margin-top:8px;font-size:11px;line-height:1.7;display:none}
+.gift-warn-box.show{display:block}
+.gift-warn-danger{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.35);color:#fca5a5}
+.gift-warn-notice{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fcd34d}
+.gift-hint-box{font-size:10px;color:var(--text3);padding:8px 12px;border-left:2px solid var(--border2);margin-top:6px;line-height:1.8}
+.gift-section-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
 </style>
 </head>
 <body>
@@ -205,6 +224,7 @@ select option{background:#1e2130}
 <div class="nav-bar">
   <button class="nav-btn active" onclick="switchPage('goals',this)">🎯 목적자금</button>
   <button class="nav-btn" onclick="switchPage('housing',this)">🏠 주택구입</button>
+  <button class="nav-btn" onclick="switchPage('gift',this)">🎁 증여/양도</button>
   <button class="nav-btn" onclick="switchPage('jeonsemont',this)">🏘️ 전세 vs 월세</button>
 </div>
 
@@ -256,6 +276,9 @@ select option{background:#1e2130}
     <label>자기자금 (만원)</label>
     <div class="input-unit"><input type="number" id="h-equity" oninput="_autoHousing();" value="30000" step="500"><span class="unit">만원</span></div>
     <div class="info-hint">※ 목적자금 시뮬레이션 결과가 있으면 자동 반영됩니다</div>
+    <label>임차보증금 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 전세 세입자 보증금</span></label>
+    <div class="input-unit"><input type="number" id="h-deposit" oninput="_autoHousing();" value="0" step="500" min="0"><span class="unit">만원</span></div>
+    <div class="info-hint" id="h-deposit-hint">※ 입력 시 LTV 한도 계산에서 차감됩니다 (금감원 규정)</div>
     <label>지역 구분</label>
     <select id="h-zone" onchange="_autoHousing();">
       <option value="speculate">투기지역 / 투기과열지구</option>
@@ -284,7 +307,7 @@ select option{background:#1e2130}
   <div class="section">
     <div class="section-title">대출 조건</div>
     <label>대출 금리 (연 %)</label>
-    <div class="range-row"><input type="range" id="h-rate" min="1" max="10" step="0.05" value="3.8" oninput="sr(this,'h-rate-v',2);_autoHousing();"><span class="range-val" id="h-rate-v">3.80%</span></div>
+    <div class="range-row"><input type="range" id="h-rate" min="1" max="10" step="0.05" value="4.5" oninput="sr(this,'h-rate-v',2);_autoHousing();"><span class="range-val" id="h-rate-v">4.50%</span></div>
     <label style="margin-top:10px">스트레스 가산금리 (연 %)</label>
     <div class="range-row"><input type="range" id="h-stress" min="0" max="3" step="0.05" value="0.38" oninput="sr(this,'h-stress-v',2);_autoHousing();"><span class="range-val" id="h-stress-v">0.38%</span></div>
     <div class="info-hint">2024년 2단계 스트레스DSR 수도권 0.38%p</div>
@@ -339,6 +362,159 @@ select option{background:#1e2130}
 </div>
 </div>
 
+<div id="page-gift" class="page">
+<div class="split-left">
+
+  <!-- ① 주택 정보 -->
+  <div class="section">
+    <div class="section-title">주택 정보</div>
+
+    <label>자산 유형</label>
+    <select id="gf-assettype" onchange="gfUpdateHoldLive();_autoGift();">
+      <option value="house" selected>주택</option>
+      <option value="building">일반 건물 · 토지</option>
+    </select>
+    <div class="info-hint" id="gf-assettype-hint">주택: 1주택 비과세·장특공제 거주요건 적용 / 일반건물·토지: 보유 연2% 최대 30% 공제만 적용</div>
+
+    <label style="margin-top:10px">주택 가격 (시가·감정평가액) (만원)</label>
+    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-market" oninput="_autoGift();gfSyncDebtMax();gfPv('gf-market-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-market-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
+    <div class="info-hint">
+      ▸ <b>증여세</b>: 시가 우선 → 감정평가액 → 기준시가 순으로 적용<br>
+      ▸ <b>저가양도 기준</b>: 시가−양도가 &gt; MIN(시가×30%, 3억) 초과 시 의제증여 과세
+    </div>
+    <div id="gf-lowprice-box" class="gift-warn-box" style="margin-top:4px"></div>
+
+    <label style="margin-top:10px">양도가액 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 일반양도·저가양도 판단 기준</span></label>
+    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-saleamt" oninput="_autoGift();gfPv('gf-saleamt-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-saleamt-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
+    <div class="info-hint">미입력 시 시가 전액 기준. 저가 매도 시 직접 입력 → 저가양도 자동 판단</div>
+
+    <label style="margin-top:10px">기준시가 / 공시가격 (만원)</label>
+    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-std" oninput="_autoGift();gfPv('gf-std-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-std-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
+    <div class="info-hint">취득세 중과(12%) 판단 기준 — 조정지역+공시가 3억 이상 여부</div>
+
+    <label style="margin-top:10px">실지 취득가액 (만원)</label>
+    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-cost" oninput="_autoGift();gfPv('gf-cost-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-cost-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
+    <div class="info-hint">양도세 취득가액. 불분명 시 기준시가로 대체 가능</div>
+
+    <label style="margin-top:10px">보유 기간 (년)</label>
+    <div class="range-row">
+      <input type="range" id="gf-hold" min="1" max="10" step="1" value="0"
+        oninput="var _v=+this.value,_mx=+this.max;document.getElementById('gf-hold-v').textContent=(_v>=_mx?_v+'년이상':_v+'년');document.getElementById('gf-hold-num').value=_v;this.style.setProperty('--pct',((_v-1)/(_mx-1)*100).toFixed(1)+'%');_autoGift();">
+      <span class="range-val" id="gf-hold-v">0년</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+      <input type="number" id="gf-hold-num" value="" min="1" max="10"
+        style="width:60px;padding:4px 6px;text-align:right;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;font-family:monospace"
+        oninput="var mx=+document.getElementById('gf-hold').max||20;var v=Math.min(mx,Math.max(1,+this.value||1));document.getElementById('gf-hold').value=v;document.getElementById('gf-hold-v').textContent=(v>=holdMax?v+'년이상':v+'년');var el=document.getElementById('gf-hold');el.style.setProperty('--pct',((v-1)/(mx-1)*100).toFixed(1)+'%');_autoGift();"
+        onblur="if(!this.value||+this.value<1)this.value=1;">
+      <span style="font-size:11px;color:var(--text3)">년</span>
+    </div>
+
+    <label style="margin-top:10px">거주 기간 (년) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 1주택 장특공제·비과세 거주요건</span></label>
+    <div class="range-row">
+      <input type="range" id="gf-live" min="0" max="10" step="1" value="0"
+        oninput="var _v=+this.value,_mx=+this.max;document.getElementById('gf-live-v').textContent=(_v>=_mx?_v+'년이상':_v+'년');document.getElementById('gf-live-num').value=_v;this.style.setProperty('--pct',(_v/_mx*100).toFixed(1)+'%');_autoGift();">
+      <span class="range-val" id="gf-live-v">0년</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+      <input type="number" id="gf-live-num" value="" min="0" max="10"
+        style="width:60px;padding:4px 6px;text-align:right;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;font-family:monospace"
+        oninput="var v=Math.min(10,Math.max(0,+this.value||0));document.getElementById('gf-live').value=v;document.getElementById('gf-live-v').textContent=v+'년';var el=document.getElementById('gf-live');el.style.setProperty('--pct',(v/10*100).toFixed(1)+'%');_autoGift();"
+        onblur="if(this.value===''||+this.value<0)this.value=0;">
+      <span style="font-size:11px;color:var(--text3)">년</span>
+    </div>
+
+    <label style="margin-top:10px">임차보증금 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 전세 세입자 보증금</span></label>
+    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-tenant" oninput="_autoGift();gfPv('gf-tenant-pv',this.value);" value="" step="500" min="0" style="width:100%"><span class="unit">만원</span></div><span id="gf-tenant-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
+    <div class="info-hint">증여세 과세표준 차감 + 부담부 채무에 자동 포함</div>
+
+    <label style="margin-top:10px">증여자 주택 보유</label>
+    <select id="gf-htype" onchange="_autoGift();">
+      <option value="one" selected>1세대 1주택</option>
+      <option value="multi2">1세대 2주택 (다주택)</option>
+      <option value="multi3">1세대 3주택 이상</option>
+    </select>
+    <label>소재지</label>
+    <select id="gf-adjzone" onchange="_autoGift();">
+      <option value="yes" selected>조정대상지역</option>
+      <option value="no">비조정대상지역</option>
+    </select>
+  </div>
+
+  <!-- ② 수증자 정보 (증여·부담부증여) -->
+  <div class="section">
+    <div class="section-title">수증자 정보 <span style="font-size:10px;font-weight:400;color:var(--text3)">— 증여·부담부증여</span></div>
+    <label>관계</label>
+    <select id="gf-rel" onchange="_autoGift();">
+      <option value="child" selected>직계존비속 (자녀·손자녀)</option>
+      <option value="minor">미성년 자녀</option>
+      <option value="spouse">배우자</option>
+      <option value="other">기타 친족 (6촌 이내 혈족 등)</option>
+    </select>
+    <label>수증자 주택 보유</label>
+    <select id="gf-grantee-house" onchange="_autoGift();">
+      <option value="none" selected>무주택</option>
+      <option value="one">1주택</option>
+      <option value="multi2">2주택</option>
+      <option value="multi3">3주택 이상</option>
+    </select>
+    <div class="info-hint">수증자 주택 수에 따라 취득세율이 달라집니다</div>
+    <label>10년 이내 기증여 누적액 (만원)</label>
+    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-prior" oninput="_autoGift();gfPv('gf-prior-pv',this.value);" value="" step="100" min="0" style="width:100%"><span class="unit">만원</span></div><span id="gf-prior-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
+    <div class="info-hint">증여재산공제는 10년간 합산 적용</div>
+  </div>
+
+  <!-- ②-B 양수인 정보 (일반양도) -->
+  <div class="section">
+    <div class="section-title">양수인 정보 <span style="font-size:10px;font-weight:400;color:var(--text3)">— 일반양도</span></div>
+    <label>양수인 구분</label>
+    <select id="gf-buyer-type" onchange="_autoGift();gfToggleBuyerHouse();">
+      <option value="related" selected>직계존비속 (특수관계인)</option>
+      <option value="third">제3자</option>
+    </select>
+    <div class="info-hint" id="gf-buyer-type-hint">직계존비속: 저가양도 이슈 적용 / 제3자: 매수자 취득세 합계 미포함</div>
+    <label id="gf-buyer-house-label">양수인 주택 보유</label>
+    <select id="gf-buyer-house" onchange="_autoGift();">
+      <option value="none" selected>무주택</option>
+      <option value="one">1주택</option>
+      <option value="multi2">2주택</option>
+      <option value="multi3">3주택 이상</option>
+    </select>
+    <div class="info-hint" id="gf-buyer-house-hint">양수인 주택 수에 따라 취득세율이 달라집니다</div>
+  </div>
+
+  <!-- ③ 부담부 증여 채무 -->
+  <div class="section" id="gf-burden-section">
+    <div class="section-title">부담부 증여 — 채무액</div>
+    <div class="info-hint" style="margin-bottom:8px">대출금만 입력 (임차보증금은 주택정보에서 별도 입력)</div>
+    <label>부담 채무액 — 대출 (만원)</label>
+    <div class="range-row">
+      <input type="range" id="gf-debt" min="0" max="50000" step="500" value="0"
+        oninput="sr(this,'gf-debt-v',0,'만');document.getElementById('gf-debt-num').value=this.value;gfPv('gf-debt-pv',this.value);_autoGift();">
+      <span class="range-val" id="gf-debt-v">0만</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+      <input type="number" id="gf-debt-num" value="0" min="0" step="500"
+        style="width:80px;padding:4px 6px;text-align:right;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;font-family:monospace"
+        oninput="var v=Math.min(+document.getElementById('gf-debt').max,Math.max(0,+this.value||0));var sl=document.getElementById('gf-debt');sl.value=v;var mx=parseFloat(sl.max);sl.style.setProperty('--pct',((v/mx)*100).toFixed(1)+'%');document.getElementById('gf-debt-v').textContent=v+'만';gfPv('gf-debt-pv',v);_autoGift();"
+        onblur="if(!this.value)this.value=0;">
+      <span style="font-size:11px;color:var(--text3)">만원</span>
+      <span id="gf-debt-pv" class="cs-preview"></span>
+    </div>
+    <div class="info-hint">채무인수액 = 수증자가 떠안는 대출 → 증여자에게 양도세 과세 / 상한: 주택가격</div>
+  </div>
+
+</div>
+
+<div class="split-right">
+  <div id="gift-empty" class="placeholder"><div style="font-size:32px;opacity:.3">🎁</div><div style="font-size:13px">조건을 입력하면 자동 계산됩니다</div></div>
+  <div id="gift-content" style="display:none">
+    <div id="gf-summary" class="result-msg" style="margin-bottom:10px"></div>
+    <div id="gf-notice" style="margin-bottom:8px;padding:10px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius);font-size:10px;color:var(--text2);line-height:1.8">⚠ <b style="color:#fcd34d">참고용 시뮬레이션입니다</b><br>필요경비(중개보수·취득 부대비용 등), 1세대 1주택 비과세 세부 요건, 감면·공제 특례 등은 반영되지 않았습니다.<br>실제 세액은 조건에 따라 달라질 수 있으므로 <b>반드시 세무사와 상의</b>하시기 바랍니다.</div><div id="gf-compare" style="margin-bottom:8px"></div>
+    <div id="gf-detail" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+</div>
 <!-- ══════════ PAGE: 전세 vs 월세 ══════════ -->
 <div id="page-jeonsemont" class="page">
 <div class="split-left">
@@ -393,6 +569,8 @@ select option{background:#1e2130}
 </div>
 </div>
 
+
+
 <script>
 
 
@@ -402,6 +580,7 @@ function debounce(fn,ms){let t;return function(){clearTimeout(t);t=setTimeout(fn
 const _autoGoals=debounce(function(){if(goalCards.length>0)runAllGoals();},400);
 const _autoHousing=debounce(runHousing,400);
 const _autoJM=debounce(runJeonseMonth,400);
+const _autoGift=debounce(runGift,300);
 const fmt=(n,d=0)=>isFinite(n)?n.toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
 const wan=n=>Math.abs(n)>=10000?fmt(n/10000,1)+'억':fmt(n)+'만';
 const fmtPct=(n,d=1)=>n.toFixed(d)+'%';
@@ -431,6 +610,11 @@ function switchHTab(name,btn){
   $('h-panel-'+name).classList.add('active');
   btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  // 탭 전환 시 canvas 크기 재조정 (display:none 상태에서 렌더된 차트 복구)
+  setTimeout(function(){
+    if(chartAmort) chartAmort.resize();
+    if(chartBalance) chartBalance.resize();
+  }, 30);
 }
 
 // ══════════════════════════════════
@@ -896,12 +1080,24 @@ function api(P,r,y){return mpi(P,r,y*12)*12}
 
 function buildSched(P,r,y,method,grace){
   const mr=r/12,n=y*12,gm=grace*12;let bal=P;const rows=[];
+  // 혼합방식: 거치 종료 시점에 월납입금을 한 번만 고정
+  let mixedMp=0;
   for(let m=1;m<=n;m++){
     const int=bal*mr;let prin,pmt;
     if(method==='bullet'){prin=m===n?bal:0;pmt=int+prin;}
     else if(method==='ei'){const mp=mpi(P,r,n);prin=mp-int;pmt=mp;}
     else if(method==='ep'){prin=P/n;pmt=prin+int;}
-    else{if(m<=gm){prin=0;pmt=int;}else{const rem=n-gm;const mp=mpi(bal,r,rem);prin=mp-bal*mr;pmt=mp;}}
+    else{
+      if(m<=gm){prin=0;pmt=int;}
+      else{
+        // 거치 종료 직후 첫 달에만 월납입금 계산 → 이후 고정
+        if(m===gm+1) mixedMp=mpi(bal,r,n-gm);
+        prin=mixedMp-int;
+        // 마지막 달에 부동소수점 오차 정리
+        if(m===n) prin=bal;
+        pmt=mixedMp;
+      }
+    }
     bal=Math.max(0,bal-prin);rows.push({m,int,prin,pmt,bal});
   }
   return rows;
@@ -934,8 +1130,14 @@ function runHousing(){
   const rate=parseFloat($('h-rate').value)/100,stress=parseFloat($('h-stress').value)/100;
   const term=+$('h-term').value||30,grace=+$('h-grace').value||0;
 
-  const loanNeed=Math.max(0,price-equity);
-  const ltvLim=LTV[zone][htype],ltvMax=price*ltvLim/100,ltvAct=loanNeed/price*100;
+  const deposit=+$('h-deposit').value||0;
+  // 실질 필요 자금 = 매매가 - 자기자금 - 임차보증금
+  const loanNeed=Math.max(0,price-equity-deposit);
+  const ltvLim=LTV[zone][htype];
+  // 금감원 규정: LTV 한도 = 매매가×LTV% - 임차보증금
+  const ltvMax=Math.max(0,price*ltvLim/100-deposit);
+  // LTV 실제 비율 = (대출+보증금) / 매매가
+  const ltvAct=(loanNeed+deposit)/price*100;
   const loan=Math.min(loanNeed,ltvMax);
 
   const existAnn=exM*12+exO;
@@ -968,18 +1170,41 @@ function runHousing(){
   }
   $('h-gauge-area').innerHTML=gc('LTV',ltvAct,ltvLim,100,'%','최대 '+wan(ltvMax))+gc('DSR',dsrAct,40,80,'%','DSR한도 '+wan(dsrMax))+gc('스트레스DSR',stDsr,40,80,'%','한도 '+wan(stMax))+gc('DTI',dtiAct,dtiLim,100,'%','지역 한도 '+dtiLim+'%');
 
+  const depositStr=deposit>0?' <span style="color:var(--teal);font-size:10px">+ 임차보증금 '+wan(deposit)+' 반영</span>':'';
   const src=lastHousingEquity?`<span style="color:var(--green);font-size:11px"> ← 목적자금 ${lastHousingEquity.years}년 결과</span>`:'';
   const incomeSrc=housingYears>0?`<span style="color:var(--text3);font-size:10px"> (현재 ${wan(incomeNow)} × 성장률 ${(incomeGrowth*100).toFixed(1)}% × ${housingYears}년 → ${wan(income)})</span>`:'';;
-  $('h-summary').innerHTML=`주택 <b>${wan(price)}</b> / 자기자금 <b>${wan(equity)}</b>${src}<br>적용 소득: <b>${wan(income)}</b>${incomeSrc} → 필요대출 <b>${wan(loanNeed)}</b><br>실행가능 대출: <b style="color:${shortfall<100?'var(--green)':'var(--amber)'}">${wan(finalLoan)}</b> ${shortfall>100?`<span style="color:var(--red)"> ⚠ ${wan(shortfall)} 추가 자기자금 필요</span>`:'<span style="color:var(--green)"> ✓ 전액 가능</span>'}<br>월 상환(원리금균등): <b style="color:var(--blue)">${wan(mres[0].fp)}/월</b> · DSR <b style="color:${dsrAct>40?'var(--red)':'var(--green)'}">${dsrAct.toFixed(1)}%</b> · 스트레스DSR <b style="color:${stDsr>40?'var(--red)':'var(--green)'}">${stDsr.toFixed(1)}%</b>`;
+  $('h-summary').innerHTML=`주택 <b>${wan(price)}</b> / 자기자금 <b>${wan(equity)}</b>${depositStr}${src}<br>적용 소득: <b>${wan(income)}</b>${incomeSrc} → 필요대출 <b>${wan(loanNeed)}</b><br>실행가능 대출: <b style="color:${shortfall<100?'var(--green)':'var(--amber)'}">${wan(finalLoan)}</b> ${shortfall>100?`<span style="color:var(--red)"> ⚠ ${wan(shortfall)} 추가 자기자금 필요</span>`:'<span style="color:var(--green)"> ✓ 전액 가능</span>'}<br>월 상환(원리금균등): <b style="color:var(--blue)">${wan(mres[0].fp)}/월</b> · DSR <b style="color:${dsrAct>40?'var(--red)':'var(--green)'}">${dsrAct.toFixed(1)}%</b> · 스트레스DSR <b style="color:${stDsr>40?'var(--red)':'var(--green)'}">${stDsr.toFixed(1)}%</b>`;
 
   $('h-repay-compare').innerHTML=mres.map(m=>`<div class="repay-card"><div class="repay-name">${m.name}</div><div class="repay-monthly" style="color:${m.c}">${wan(m.fp)}/월</div><div class="repay-total">총 ${wan(m.tp)}</div><div class="repay-interest">이자 ${wan(m.ti)}</div></div>`).join('');
 
   const eiY=aggY(mres[0].sched),epY=aggY(mres[1].sched),blY=aggY(mres[2].sched),mxY=aggY(mres[3].sched);
-  const yL=eiY.map(d=>d.year+'년');
+  const yL=eiY.map(d=>d.year+"년");
   if(chartAmort)chartAmort.destroy();
-  chartAmort=new Chart($('chart-amort'),{type:'bar',data:{labels:yL,datasets:[{label:'원금',data:eiY.map(d=>d.prin/10000),backgroundColor:'rgba(79,142,247,.7)',stack:'s'},{label:'이자',data:eiY.map(d=>d.int/10000),backgroundColor:'rgba(248,113,113,.5)',stack:'s'}]},options:{responsive:true,plugins:{legend:{labels:{color:'#8b90b0',font:{size:11}}},tooltip:{backgroundColor:'#1e2130',callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(0)}만`}}},scales:{x:{stacked:true,ticks:{color:'#555a7a',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{stacked:true,ticks:{color:'#555a7a',font:{size:10},callback:v=>v+'만'},grid:{color:'rgba(255,255,255,.04)'}}}}});
+  chartAmort=new Chart($("chart-amort"),{type:"bar",maintainAspectRatio:true,data:{labels:yL,datasets:[
+    {label:"원금",data:eiY.map(d=>Math.round(d.prin)),backgroundColor:"rgba(79,142,247,.7)",stack:"s"},
+    {label:"이자",data:eiY.map(d=>Math.round(d.int)),backgroundColor:"rgba(248,113,113,.5)",stack:"s"}
+  ]},options:{responsive:true,plugins:{
+    legend:{labels:{color:"#8b90b0",font:{size:11}}},
+    tooltip:{backgroundColor:"#1e2130",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
+  },scales:{
+    x:{stacked:true,ticks:{color:"#555a7a",font:{size:10}},grid:{color:"rgba(255,255,255,.04)"}},
+    y:{stacked:true,ticks:{color:"#555a7a",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(255,255,255,.04)"}}
+  }}});
   if(chartBalance)chartBalance.destroy();
-  chartBalance=new Chart($('chart-balance'),{type:'line',data:{labels:['시작',...yL],datasets:[{label:'원리금균등',data:[finalLoan,...eiY.map(d=>d.bal)].map(v=>v/10000),borderColor:'#4f8ef7',borderWidth:2,pointRadius:0,tension:.3,fill:false},{label:'원금균등',data:[finalLoan,...epY.map(d=>d.bal)].map(v=>v/10000),borderColor:'#22c87a',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},{label:'만기일시',data:[finalLoan,...blY.map(d=>d.bal)].map(v=>v/10000),borderColor:'#f87171',borderWidth:1.5,pointRadius:0,tension:.3,fill:false,borderDash:[4,3]},{label:`혼합`,data:[finalLoan,...mxY.map(d=>d.bal)].map(v=>v/10000),borderColor:'#a78bfa',borderWidth:1.5,pointRadius:0,tension:.3,fill:false}]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#8b90b0',font:{size:11}}},tooltip:{backgroundColor:'#1e2130',callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(0)}만`}}},scales:{x:{ticks:{color:'#555a7a',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555a7a',font:{size:10},callback:v=>v+'만'},grid:{color:'rgba(255,255,255,.04)'}}}}});
+  chartBalance=new Chart($("chart-balance"),{type:"line",maintainAspectRatio:true,data:{labels:["시작",...yL],datasets:[
+    {label:"원리금균등",data:[finalLoan,...eiY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#4f8ef7",borderWidth:2,pointRadius:0,tension:.3,fill:false},
+    {label:"원금균등",data:[finalLoan,...epY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#22c87a",borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
+    {label:"만기일시",data:[finalLoan,...blY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#f87171",borderWidth:1.5,pointRadius:0,tension:.3,fill:false,borderDash:[4,3]},
+    {label:"혼합",data:[finalLoan,...mxY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#a78bfa",borderWidth:1.5,pointRadius:0,tension:.3,fill:false}
+  ]},options:{responsive:true,interaction:{mode:"index",intersect:false},plugins:{
+    legend:{labels:{color:"#8b90b0",font:{size:11}}},
+    tooltip:{backgroundColor:"#1e2130",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
+  },scales:{
+    x:{ticks:{color:"#555a7a",font:{size:10}},grid:{color:"rgba(255,255,255,.04)"}},
+    y:{ticks:{color:"#555a7a",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(255,255,255,.04)"}}
+  }}});
+
+
 
   $('h-amort-tbody').innerHTML=eiY.map(d=>{const b=d.pmt/income*100;const bc=b>40?'t-neg':b>30?'':'t-pos';return`<tr><td class="t-yr">${d.year}년</td><td class="tnum">${wan(d.prin)}</td><td class="t-neg">${wan(d.int)}</td><td class="tnum">${wan(d.pmt)}</td><td class="tnum">${wan(d.bal)}</td><td class="${bc}">${b.toFixed(1)}%</td></tr>`;}).join('');
 
@@ -1289,6 +1514,547 @@ function syncCardNumberBlur(input){
   updateCard(+input.getAttribute('data-cid'), input.getAttribute('data-key'), v);
   _autoGoals();
 }
+
+
+
+// ══════════════════════════════════════
+// GIFT / 부담부증여 계산
+// ══════════════════════════════════════
+
+// ══════════════════════════════════════
+// 3가지 방법 비교 계산
+// ══════════════════════════════════════
+// 주택가격 변경 시 채무 슬라이더 max 동기화
+// 만원 → 억/만 미리보기 업데이트
+function gfPv(pvId, val){
+  var v=parseFloat(val)||0;
+  var el=document.getElementById(pvId);
+  if(!el) return;
+  if(v===0){el.textContent='';return;}
+  if(v>=100000000) el.textContent=(v/100000000).toFixed(2)+'조';
+  else if(v>=10000) el.textContent=(v/10000).toFixed(v%10000===0?0:1)+'억';
+  else el.textContent=v+'만';
+}
+// 자산유형에 따라 보유기간 max + 거주기간 활성/비활성 업데이트
+function gfUpdateHoldLive(){
+  var at=document.getElementById('gf-assettype');
+  if(!at) return;
+  var isBuilding=(at.value==='building');
+  // 보유기간 슬라이더
+  var holdSl=document.getElementById('gf-hold');
+  var holdNum=document.getElementById('gf-hold-num');
+  var holdMax=isBuilding?15:10;
+  if(holdSl){
+    holdSl.max=holdMax;
+    if(+holdSl.value>holdMax){holdSl.value=holdMax;}
+    var v=+holdSl.value||1;
+    holdSl.style.setProperty('--pct',((v-1)/(holdMax-1)*100).toFixed(1)+'%');
+    document.getElementById('gf-hold-v').textContent=v+'년';
+  }
+  if(holdNum){
+    holdNum.max=holdMax;
+    holdNum.oninput=function(){var mx=+document.getElementById("gf-hold").max||20;var v=Math.min(mx,Math.max(1,+this.value||1));document.getElementById("gf-hold").value=v;document.getElementById("gf-hold-v").textContent=v+"년";var el=document.getElementById("gf-hold");el.style.setProperty("--pct",((v-1)/(mx-1)*100).toFixed(1)+"%");_autoGift();};
+    if(+holdNum.value>holdMax) holdNum.value=holdMax;
+  }
+  // 거주기간: 일반건물이면 비활성화
+  var liveSl=document.getElementById('gf-live');
+  var liveNum=document.getElementById('gf-live-num');
+  var liveLabel=document.querySelector('label[for-gf-live]');
+  var liveSection=liveSl?liveSl.closest('div.range-row'):null;
+  var liveWrap=liveSection?liveSection.parentElement:null;
+  var opacity=isBuilding?'0.35':'1';
+  var pointer=isBuilding?'none':'auto';
+  // 거주기간 영역 (range-row + num 행) 비활성화
+  [liveSl,liveNum].forEach(function(el){
+    if(el){el.disabled=isBuilding;el.style.opacity=opacity;el.style.pointerEvents=pointer;}
+  });
+  // 거주기간 span 텍스트 색
+  var lv=document.getElementById('gf-live-v');
+  if(lv) lv.style.opacity=opacity;
+  if(isBuilding && liveSl) liveSl.value=0;
+  if(isBuilding && liveNum) liveNum.value='';
+}
+function gfToggleBuyerHouse(){
+  var bt=document.getElementById('gf-buyer-type');
+  var isThird=bt&&bt.value==='third';
+  var bh=document.getElementById('gf-buyer-house');
+  var bhl=document.getElementById('gf-buyer-house-label');
+  var bhh=document.getElementById('gf-buyer-house-hint');
+  var hint=document.getElementById('gf-buyer-type-hint');
+  [bh,bhl,bhh].forEach(function(el){if(el){el.style.opacity=isThird?'0.35':'1';el.style.pointerEvents=isThird?'none':'auto';}});
+  if(bh) bh.disabled=isThird;
+  if(hint) hint.textContent=isThird
+    ?'제3자: 매수자 취득세를 합계에 포함하지 않습니다'
+    :'직계존비속: 저가양도 이슈 적용 / 취득세 합계에 포함';
+}
+function gfSyncDebtMax(){
+  var market=+document.getElementById('gf-market').value||50000;
+  var sl=document.getElementById('gf-debt');
+  if(sl){ sl.max=market; if(+sl.value>market){sl.value=market;document.getElementById('gf-debt-num').value=market;document.getElementById('gf-debt-v').textContent=market+'만';} var mx=market;sl.style.setProperty('--pct',(+sl.value/mx*100).toFixed(1)+'%'); }
+}
+function calcAllThree(market, std, cost, debt, tenant, hold, live, rel, prior, htype, isAdj, assettype, saleamt, granteeHouse, buyerType, buyerHouse, isAdj2){
+  const _stdOver3 = std>=30000;
+  function _giftRate(gh){ return (isAdj2&&_stdOver3&&(gh==='multi2'||gh==='multi3'))?0.12:0.035; }
+  function _paidRate(bh){ if(!isAdj2){return bh==='multi3'?0.04:0.03;} if(bh==='multi2')return 0.08; if(bh==='multi3')return 0.12; return 0.03; }
+  const giftAcqRate = _giftRate(granteeHouse||'none');
+  const paidAcqRate = _paidRate(granteeHouse||'none');
+  const _saleRate   = (buyerType==='third')?0:_paidRate(buyerHouse||'none');
+
+  // ── A. 순수 증여 ──
+  const aGiftBase = Math.max(0, market - tenant);
+  const aGft = calcGiftTax(aGiftBase, rel, prior);
+  const aAcqGift = Math.round(aGiftBase * giftAcqRate);
+  const aAcqPaid = tenant>0 ? Math.round(tenant * paidAcqRate) : 0;
+  const aTotalA = Math.round(aGft.tax) + aAcqGift + aAcqPaid; // 수증자 부담
+  const aTotalB = 0; // 증여자 부담 없음
+  const aTotal  = aTotalA;
+
+  // ── B. 부담부 증여 ──
+  const bTotalBurden = debt + tenant;
+  const bGiftBase = Math.max(0, market - bTotalBurden);
+  const bGft = calcGiftTax(bGiftBase, rel, prior);
+  const bTrans = bTotalBurden>0 ? calcTransferTax(market, cost, bTotalBurden, hold, live, htype, assettype) : null;
+  const bGiftPart = Math.max(0, market - bTotalBurden);
+  const bAcqGift = Math.round(bGiftPart * giftAcqRate);
+  const bAcqPaid = Math.round(bTotalBurden * paidAcqRate);
+  const bTotalA = Math.round(bGft.tax) + bAcqGift + bAcqPaid; // 수증자
+  const bTotalB = bTrans ? Math.round(bTrans.total) : 0;       // 증여자
+  const bTotal  = bTotalA + bTotalB;
+
+  // ── C. 일반 양도 ──
+  const salePrice = saleamt > 0 ? saleamt : market;
+  const cTrans = calcTransferTax(market, cost, salePrice, hold, live, htype, assettype);
+  // 매수자: 유상 취득세 (1~3%)
+  const cAcqPaid = Math.round(market * paidAcqRate);
+  const cTotalA = cAcqPaid;                          // 매수자(자녀) 부담
+  const cTotalB = Math.round(cTrans.total);          // 양도자(부모) 부담
+  const cTotal  = cTotalA + cTotalB;
+
+  return {
+    pure:    {giftTax:Math.round(aGft.tax), acqTax:aAcqGift+aAcqPaid, transTax:0,   totalA:aTotalA, totalB:aTotalB, total:aTotal, exempt:false},
+    burden:  {giftTax:Math.round(bGft.tax), acqTax:bAcqGift+bAcqPaid, transTax:bTotalB, totalA:bTotalA, totalB:bTotalB, total:bTotal, exempt:bTrans?bTrans.is1HouseExempt:false},
+    sale:    {giftTax:0, acqTax:cAcqPaid, transTax:cTotalB, totalA:cTotalA, totalB:cTotalB, total:cTotal, exempt:cTrans.is1HouseExempt, buyerThird:(buyerType==='third')},
+  };
+}
+
+function renderCompare(cmp, type){
+  const methods = [
+    {key:'pure',   label:'순수 증여',    icon:'🎁', r:cmp.pure},
+    {key:'burden', label:'부담부 증여',  icon:'⚖️', r:cmp.burden},
+    {key:'sale',   label:'일반 양도',    icon:'🏷️', r:cmp.sale},
+  ];
+  const totals = methods.map(m=>m.r.total);
+  const minVal = Math.min(...totals);
+  const maxVal = Math.max(...totals);
+
+  const cards = methods.map(m=>{
+    const isBest  = m.r.total===minVal;
+    const isWorst = m.r.total===maxVal && minVal!==maxVal;
+    const badge = isBest
+      ? '<span class="compare-badge cb-best">✓ 최저 세금</span>'
+      : isWorst ? '<span class="compare-badge cb-worst">최고 세금</span>' : '';
+    const cls = 'compare-card'+(isBest?' best':isWorst?' worst':'');
+    const color = isBest?'var(--green)':isWorst?'var(--red)':'var(--text)';
+
+    let rows = '';
+    if(m.key==='pure'){
+      rows += '<div>증여세 (수증자): <b>'+wan(m.r.giftTax)+'</b></div>';
+      rows += '<div>취득세 (수증자): <b>'+wan(m.r.acqTax)+'</b></div>';
+      rows += '<div style="color:var(--text3)">양도세: —</div>';
+    } else if(m.key==='burden'){
+      rows += '<div>증여세 (수증자): <b>'+wan(m.r.giftTax)+'</b></div>';
+      rows += '<div>취득세 (수증자): <b>'+wan(m.r.acqTax)+'</b></div>';
+      rows += m.r.exempt
+        ? '<div style="color:var(--green)">양도세: <b>비과세 ✓</b></div>'
+        : '<div>양도세 (증여자): <b>'+wan(m.r.transTax)+'</b></div>';
+    } else {
+      rows += '<div style="color:var(--text3)">증여세: —</div>';
+      rows += m.r.buyerThird
+        ? '<div style="color:var(--text3)">취득세: 제3자 별도 (미포함)</div>'
+        : '<div>취득세 (매수자): <b>'+wan(m.r.acqTax)+'</b></div>';
+      rows += m.r.exempt
+        ? '<div style="color:var(--green)">양도세: <b>비과세 ✓</b></div>'
+        : '<div>양도세 (양도자): <b>'+wan(m.r.transTax)+'</b></div>';
+    }
+
+    const saving = m.r.total - minVal;
+    const savingStr = saving>0
+      ? '<div style="font-size:9px;color:var(--red);margin-top:3px">최저 대비 +'+wan(saving)+' 더 납부</div>'
+      : '<div style="font-size:9px;color:var(--green);margin-top:3px">세금 최소화 방법</div>';
+
+    return '<div class="'+cls+'">'
+      +'<div class="compare-title">'+m.icon+' '+m.label+' '+badge+'</div>'
+      +'<div class="compare-rows">'+rows+'</div>'
+      +'<div class="compare-total" style="color:'+color+'">합계 '+wan(m.r.total)+'</div>'
+      +savingStr
+      +'</div>';
+  }).join('');
+
+  return '<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">📊 3가지 방법 세금 비교</div>'
+    +'<div class="compare-grid">'+cards+'</div>'
+    +'<div style="font-size:10px;color:var(--text3);margin-bottom:4px">※ 현재 선택: <b style="color:var(--accent)">'
+    +(type==='pure'?'순수 증여':type==='burden'?'부담부 증여':'일반 양도')
+    +'</b> 기준으로 상세 계산 표시 | 다주택 중과 유예(~2026.5.9) 기간 중 일반세율 기준</div>';
+}
+
+function calcGiftTax(taxBase, rel, prior){
+  // 증여재산공제
+  const deduct = rel==='spouse'?600000:rel==='child'||rel==='minor'?(rel==='minor'?2000:5000):1000;
+  const net = Math.max(0, taxBase + prior - deduct) - Math.max(0, prior - deduct);
+  const taxable = Math.max(0, net);
+  // 증여세 누진세율
+  function giftRate(v){
+    if(v<=12000)return v*0.10;
+    if(v<=60000)return 1200+(v-12000)*0.20;
+    if(v<=300000)return 10800+(v-60000)*0.30;
+    if(v<=600000)return 82800+(v-300000)*0.40;
+    return 202800+(v-600000)*0.50;
+  }
+  const tax = giftRate(taxable);
+  return {deduct, taxBase, taxable, tax: Math.max(0,tax)};
+}
+
+function calcTransferTax(market, cost, debt, hold, live, htype, assettype){
+  // 국세청 기준: 양도가액·취득가액 = 당해자산가액 × (채무/시가) 비율
+  const ratio = debt / market;
+  const transCost = cost * ratio;   // 취득가액 안분 (실지취득가액 기준)
+  const transPrice = market * ratio; // 양도가액 안분 = debt (동일)
+  const gain = Math.max(0, transPrice - transCost);
+
+  // ── 장기보유특별공제 ──
+  let lhdc = 0, lhdcType = '', exemptNote = '';
+  const isHighPrice = market > 120000;
+  const is1House = (htype === 'one');
+  const isHouse = (assettype !== 'building');
+
+  // 1세대 1주택 비과세 판단 (주택만, 시가 12억 이하, 보유 2년+, 거주 2년+)
+  const is1HouseExempt = isHouse && is1House && !isHighPrice && hold >= 2 && live >= 2;
+
+  if(hold >= 3){
+    if(isHouse && is1House && isHighPrice && live >= 2){
+      const holdDed = Math.min(hold * 4, 40);
+      const liveDed = Math.min(live * 4, 40);
+      lhdc = Math.min(holdDed + liveDed, 80);
+      lhdcType = '1주택 고가 (보유'+hold+'년×4% + 거주'+live+'년×4%)';
+    } else if(isHouse && is1House && isHighPrice && live < 2){
+      lhdc = Math.min(hold * 4, 40);
+      lhdcType = '1주택 고가 거주미충족 (보유'+hold+'년×4%)';
+    } else {
+      lhdc = Math.min(hold * 2, 30);
+      lhdcType = (isHouse?'주택':'건물·토지')+' 일반 (보유'+hold+'년×2%)';
+    }
+  }
+
+  // 1주택 비과세: gain 전체 면세 (12억 초과 고가는 초과분만 과세)
+  let exemptGain = 0;
+  if(is1HouseExempt){
+    exemptGain = gain; // 전액 비과세
+  }
+  const taxableGain = Math.max(0, gain - exemptGain);
+
+  const deductAmt = taxableGain * lhdc / 100;
+  const basicDed = 250;
+  const taxable = Math.max(0, taxableGain - deductAmt - basicDed);
+
+  // 양도세 일반세율 누진
+  function transRate(v){
+    if(v<=14000) return v*0.06;
+    if(v<=50000) return 840+(v-14000)*0.15;
+    if(v<=88000) return 6240+(v-50000)*0.24;
+    if(v<=150000)return 15360+(v-88000)*0.35;
+    if(v<=300000)return 37060+(v-150000)*0.38;
+    if(v<=500000)return 94060+(v-300000)*0.40;
+    return 174060+(v-500000)*0.42;
+  }
+  const tax = transRate(taxable);
+  const localTax = tax * 0.1;
+
+  // 다주택 중과 (현재 2026.5.9까지 유예 중 → 유예 안내만)
+  const surcharge = htype==='multi2'?20: htype==='multi3'?30:0;
+
+  return {ratio, gain, lhdc, lhdcType, deductAmt, taxable, tax, localTax,
+          total: tax+localTax, surcharge, isHighPrice, is1House, is1HouseExempt, exemptGain};
+}
+
+function runGift(){
+  const market = +$('gf-market').value||0;
+  const std    = +$('gf-std').value||0;
+  const cost   = +$('gf-cost').value||0;
+  const type   = 'burden'; // 3가지 비교: 상세는 부담부 기준, 비교카드에서 전체 표시
+  const debt   = +$('gf-debt').value||0;
+  const hold   = +$('gf-hold').value||0;
+  const live   = +$('gf-live').value||0;
+  const rel    = $('gf-rel').value;
+  const prior  = +$('gf-prior').value||0;
+  const htype     = $('gf-htype').value;
+  const isAdj     = $('gf-adjzone').value==='yes';
+  const tenant    = +$('gf-tenant').value||0;
+  const assettype    = $('gf-assettype').value;
+  const saleamt      = +$('gf-saleamt').value||0;
+  const granteeHouse = $('gf-grantee-house').value; // 수증자 주택: none/one/multi2/multi3
+  const buyerType    = $('gf-buyer-type').value;    // 양수인: related/third
+  const buyerHouse   = $('gf-buyer-house').value;   // 양수인 주택: none/one/multi2/multi3
+  // 채무 슬라이더 max를 시가까지 확장 (보증금 포함 가능하게)
+  (function(){
+    var sl=document.getElementById('gf-debt');
+    if(sl){ var newMax=Math.max(+sl.max, market); sl.max=newMax; }
+  })();
+  // 저가양도 판단 기준: 양도가액 입력 우선, 없으면 부담부 채무+보증금 합계
+  const transfer = saleamt > 0 ? saleamt : (debt + tenant);
+
+  // 주택가격 미입력 시 결과 숨김
+  var bSec=$('gf-burden-section'); if(bSec) bSec.style.display='';
+  if(market===0){
+    $('gift-empty').style.display='';
+    $('gift-content').style.display='none';
+    var lb=$('gf-lowprice-box'); if(lb){lb.className='gift-warn-box';lb.innerHTML='';}
+    return;
+  }
+
+  // ── 저가양도 판단 ──
+  const diffLimit = Math.min(market*0.30, 30000);
+  const lowPriceThreshold = market - diffLimit;
+  const lowPriceBox = $('gf-lowprice-box');
+  if(lowPriceBox){
+    if(transfer>0 && transfer<lowPriceThreshold){
+      const deemedGift = Math.max(0, market-transfer-diffLimit);
+      lowPriceBox.className='gift-warn-box gift-warn-danger show';
+      lowPriceBox.innerHTML='<b>⚠ 저가양도 해당</b><br>'+
+        '시가('+wan(market)+') − 양도가('+wan(transfer)+') = '+wan(market-transfer)+'<br>'+
+        '기준차액 MIN(시가×30%, 3억) = '+wan(diffLimit)+'<br>'+
+        '<b>의제 증여액: '+wan(deemedGift)+'</b><br>'+
+        '<span style="color:var(--text3);font-size:10px">과세당국이 의제 증여액을 수증자에게 추가 과세할 수 있습니다</span>';
+    } else if(transfer>0){
+      lowPriceBox.className='gift-warn-box gift-warn-notice show';
+      lowPriceBox.innerHTML='✅ 저가양도 해당 없음 — 차액이 기준('+wan(diffLimit)+') 이내';
+    } else {
+      lowPriceBox.className='gift-warn-box'; lowPriceBox.innerHTML='';
+    }
+  }
+
+  // ── 증여세 ──
+  // 임차보증금은 증여재산에서 차감 (수증자가 임차채무 인수)
+  // 부담부: 채무+보증금 전부 차감 / 순수: 보증금만 차감
+  const giftBase = type==='pure'
+    ? Math.max(0, market - tenant)
+    : Math.max(0, market - debt - tenant);
+  const gft = calcGiftTax(giftBase, rel, prior);
+
+  // ── 양도세 (부담부) ──
+  // 보증금도 부담부 채무로 봐서 양도 부분에 포함
+  const totalBurden = type==='burden' ? debt + tenant : 0;
+  let trans = null;
+  if(type==='burden' && totalBurden>0){
+    trans = calcTransferTax(market, cost, totalBurden, hold, live, htype, assettype);
+  }
+
+  // ── 취득세 (분리 계산) ──
+  // 무상분(증여): 기준 3.5%, 조정지역+공시가 3억이상+비1주택 → 12%
+  const stdOver3 = std >= 30000;
+
+  // 무상취득(증여) 세율 — 수증자 주택수 기준
+  function calcGiftAcqRate(granteeH){
+    // 조정+공시3억↑+수증자 다주택 → 12%
+    if(isAdj && stdOver3 && (granteeH==='multi2'||granteeH==='multi3')) return 0.12;
+    return 0.035; // 기본 3.5%
+  }
+  // 유상취득 세율 — 매수자/채무인수자 주택수 기준
+  function calcPaidAcqRate(buyerH, isAdj){
+    if(!isAdj){
+      if(buyerH==='multi3') return 0.04;
+      return 0.03; // 비조정 기본
+    }
+    if(buyerH==='multi2') return 0.08;
+    if(buyerH==='multi3') return 0.12;
+    return 0.03; // 무주택·1주택
+  }
+
+  const giftAcqRate = calcGiftAcqRate(granteeHouse);
+  const paidAcqRate = calcPaidAcqRate(granteeHouse, isAdj); // 채무인수분은 수증자 기준
+  const saleAcqRate = buyerType==='third' ? 0 : calcPaidAcqRate(buyerHouse, isAdj); // 제3자면 합계 미포함
+
+  let acqTaxGift, acqTaxPaid, acqTaxTotal, acqTaxNote;
+  if(type==='pure'){
+    // 순수증여: 보증금도 수증자 인수 시 공제
+    const pureGiftPart = Math.max(0, market - tenant);
+    acqTaxGift = Math.round(pureGiftPart * giftAcqRate);
+    acqTaxPaid = tenant>0 ? Math.round(tenant * paidAcqRate) : 0;
+    acqTaxTotal = acqTaxGift + acqTaxPaid;
+    acqTaxNote = tenant>0
+      ? '무상분('+wan(pureGiftPart)+')×'+(giftAcqRate*100).toFixed(0)+'% + 보증금('+wan(tenant)+')×'+(paidAcqRate*100).toFixed(0)+'%'
+      : '순수 증여 취득세율 '+(giftAcqRate*100).toFixed(0)+'%';
+  } else {
+    // 부담부: 채무+보증금=유상, 나머지=무상
+    const totalDebt = debt + tenant;
+    const giftPart = Math.max(0, market - totalDebt);
+    acqTaxGift = Math.round(giftPart * giftAcqRate);
+    acqTaxPaid = Math.round(totalDebt * paidAcqRate);
+    acqTaxTotal = acqTaxGift + acqTaxPaid;
+    acqTaxNote = '무상분('+wan(giftPart)+')×'+(giftAcqRate*100).toFixed(0)+'% + 유상분(채무'+wan(debt)+(tenant>0?'+보증금'+wan(tenant):'')+')×'+(paidAcqRate*100).toFixed(0)+'%';
+  }
+
+  const totalTax = gft.tax + (trans?trans.total:0) + acqTaxTotal;
+
+  // ── 결과 표시 ──
+  $('gift-empty').style.display='none';
+  $('gift-content').style.display='block';
+
+  const tenantStr = tenant>0 ? ' / 임차보증금 <b style="color:var(--teal)">'+wan(tenant)+'</b>' : '';
+  $('gf-summary').innerHTML = '주택 <b>'+wan(market)+'</b>'+tenantStr+' / 취득가액 <b>'+wan(cost)+'</b> / 보유 <b>'+hold+'년</b> 거주 <b>'+live+'년</b>';
+
+  // ── 3가지 방법 비교 패널 ──
+  const cmp = calcAllThree(market, std, cost, debt, tenant, hold, live, rel, prior, htype, isAdj, assettype, saleamt, granteeHouse, buyerType, buyerHouse, isAdj);
+  $('gf-compare').innerHTML = renderCompare(cmp, type);
+
+  // 다주택 중과 유예 안내 배너
+  let surchargeNotice = '';
+  if(trans && (htype==='multi2'||htype==='multi3')){
+    surchargeNotice = '<div style="margin:8px 0;padding:10px 14px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:var(--radius);font-size:11px;color:#fcd34d">'+
+      '⚠ <b>다주택 양도세 중과 유예 중</b> (2022.5.10 ~ 2026.5.9)<br>'+
+      '현재는 일반세율로 계산됩니다. 유예 종료(2026.5.10) 후엔 '+
+      (htype==='multi2'?'+20%p':'+30%p')+' 중과세율 적용 예정</div>';
+  }
+
+  // KPI 카드
+  const kpiItems = [
+    {label:'증여세 (수증자)', val:wan(Math.round(gft.tax)), color:'var(--amber)'},
+    {label:'취득세 (수증자)', val:wan(acqTaxTotal), color:'var(--blue)'},
+    ...(trans?[
+      {label:'양도세 (증여자)', val:wan(Math.round(trans.tax)), color:'var(--red)'},
+      {label:'지방소득세', val:wan(Math.round(trans.localTax)), color:'var(--purple)'},
+    ]:[]),
+    {label:'총 세금 합계', val:wan(Math.round(totalTax)), color:'var(--teal)'},
+  ];
+  // (상세 3열에 세금 내역 포함되므로 별도 KPI 카드 제거)
+
+  // ── 상세 패널: 3열 그리드 (비교카드 바로 아래) ──
+  // 일반양도 계산 (C 케이스와 동일 로직)
+  const salePrice = saleamt > 0 ? saleamt : market;
+  const saleTrans = calcTransferTax(market, cost, salePrice, hold, live, htype, assettype);
+  const saleAcqPaid = Math.round(salePrice * saleAcqRate);
+
+  function colWrap(icon, title, isBest, content){
+    const border = isBest ? '1px solid var(--green)' : '1px solid var(--border2)';
+    const bg = isBest ? 'rgba(34,200,122,.04)' : 'var(--bg3)';
+    return '<div style="background:'+bg+';border:'+border+';border-radius:var(--radius-lg);padding:12px;min-width:0">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px">'+icon+' '+title+'</div>'
+      +content
+      +'</div>';
+  }
+
+  function detailTable(rows){
+    return '<table class="data-table" style="font-size:10px"><tbody>'
+      + rows.map(r=>'<tr><td style="padding:3px 4px;color:var(--text2)">'+r[0]+'</td><td class="tnum '+(r[2]||'')+'" style="padding:3px 4px;font-size:10px">'+r[1]+'</td></tr>').join('')
+      +'</tbody></table>';
+  }
+
+  function hint(txt){
+    return '<div class="info-hint" style="margin-top:6px;font-size:10px">'+txt+'</div>';
+  }
+
+  const totals3 = [cmp.pure.total, cmp.burden.total, cmp.sale.total];
+  const minTot = Math.min(...totals3);
+
+  // ── A: 순수 증여 ──
+  const pureGiftTable = detailTable([
+    ['시가 (과세 기준)', wan(market)],
+    ['임차보증금 공제', tenant>0 ? '− '+wan(tenant) : '—'],
+    ['증여재산공제', '− '+wan(gft.deduct), 't-pos'],
+    ['10년 내 기증여', prior>0 ? '+ '+wan(prior) : '0만'],
+    ['과세표준', wan(calcGiftTax(Math.max(0,market-tenant),rel,prior).taxable), 'fw-bold'],
+    ['증여세', wan(Math.round(calcGiftTax(Math.max(0,market-tenant),rel,prior).tax)), 't-neg fw-bold'],
+    ['취득세', wan(Math.round(Math.max(0,market-tenant)*giftAcqRate)), 't-neg'],
+    ['─────', '─────'],
+    ['합계', wan(cmp.pure.total), 't-neg fw-bold'],
+  ]);
+  const granteeHouseLabel={'none':'무주택','one':'1주택','multi2':'2주택','multi3':'3주택↑'};
+  const buyerHouseLabel={'none':'무주택','one':'1주택','multi2':'2주택','multi3':'3주택↑'};
+  const pureHint = hint('공제: 배우자 6억 / 직계존비속 5천만 / 미성년 2천만 / 기타친족 1천만<br>'
+    +'수증자 주택: <b>'+(granteeHouseLabel[granteeHouse]||'-')+'</b> → 취득세율 '+(giftAcqRate*100).toFixed(0)+'%'
+    +(isAdj&&stdOver3&&(granteeHouse==='multi2'||granteeHouse==='multi3')?' <b style="color:var(--amber)">(조정+공시3억↑→12%)</b>':''));
+
+  // ── B: 부담부 증여 ──
+  const burdenGiftBase = Math.max(0, market - debt - tenant);
+  const burdenGft = calcGiftTax(burdenGiftBase, rel, prior);
+  const burdenTransTitle = trans
+    ? (trans.is1HouseExempt ? '양도세: 비과세 ✓' : '양도세: '+wan(Math.round(trans.total)))
+    : '양도세: (채무 없음)';
+  const burdenGiftTableRows = [
+    ['시가', wan(market)],
+    ['채무 공제', debt>0 ? '− '+wan(debt) : '—'],
+    ['보증금 공제', tenant>0 ? '− '+wan(tenant) : '—'],
+    ['증여재산공제', '− '+wan(burdenGft.deduct), 't-pos'],
+    ['과세표준', wan(burdenGft.taxable), 'fw-bold'],
+    ['증여세 (수증자)', wan(Math.round(burdenGft.tax)), 't-neg fw-bold'],
+    ['취득세 (수증자)', wan(acqTaxTotal), 't-neg'],
+  ];
+  if(trans){
+    burdenGiftTableRows.push(['─ 양도세 부분 ─','─────']);
+    if(trans.is1HouseExempt){
+      burdenGiftTableRows.push(['양도세 (증여자)', '비과세 ✓', 't-pos fw-bold']);
+    } else {
+      burdenGiftTableRows.push(['양도가액', wan(Math.round(trans.ratio*market))]);
+      burdenGiftTableRows.push(['취득가액 안분', '− '+wan(Math.round(trans.transCost)), 't-pos']);
+      burdenGiftTableRows.push(['양도차익', wan(Math.round(trans.gain))]);
+      burdenGiftTableRows.push(['장특공제 '+trans.lhdc+'%', '− '+wan(Math.round(trans.deductAmt)), 't-pos']);
+      burdenGiftTableRows.push(['양도세+지방세', wan(Math.round(trans.total)), 't-neg fw-bold']);
+    }
+  }
+  burdenGiftTableRows.push(['─────', '─────']);
+  burdenGiftTableRows.push(['합계', wan(cmp.burden.total), 't-neg fw-bold']);
+
+  const burdenHint = hint('증여자: 양도세 납부 / 수증자: 증여세+취득세 납부<br>장특공제: '+( trans?trans.lhdcType:'해당 없음'));
+
+  // ── C: 일반 양도 ──
+  const saleTableRows = [
+    ['양도가액', wan(salePrice)],
+    ['취득가액', '− '+wan(cost), 't-pos'],
+    ['양도차익', wan(Math.round(saleTrans.gain))],
+    ['장특공제 '+saleTrans.lhdc+'%', '− '+wan(Math.round(saleTrans.deductAmt)), 't-pos'],
+    ['기본공제', '− 250만', 't-pos'],
+    ['과세표준', wan(Math.round(saleTrans.taxable)), 'fw-bold'],
+  ];
+  if(saleTrans.is1HouseExempt){
+    saleTableRows.push(['양도세 (양도자)', '비과세 ✓', 't-pos fw-bold']);
+  } else {
+    saleTableRows.push(['양도소득세', wan(Math.round(saleTrans.tax)), 't-neg']);
+    saleTableRows.push(['지방소득세', wan(Math.round(saleTrans.localTax)), 't-neg']);
+    saleTableRows.push(['양도세 합계', wan(Math.round(saleTrans.total)), 't-neg fw-bold']);
+  }
+  saleTableRows.push(buyerType==='third'
+    ? ['취득세 (매수자)', '제3자 별도 — 미포함', 'color:var(--text3)']
+    : ['취득세 (매수자 '+buyerHouse+')', wan(saleAcqPaid), 't-neg']);
+  saleTableRows.push(['─────', '─────']);
+  saleTableRows.push(['합계', wan(cmp.sale.total), 't-neg fw-bold']);
+
+  const _saleAcqInfo = buyerType==='third'
+    ? '제3자 매수 → 취득세 합계 미포함 (매수자 별도 부담)'
+    : '양수인('+buyerHouseLabel[buyerHouse]+') 유상취득세 '+(saleAcqRate*100).toFixed(0)+'% / 양도자: 양도세 납부';
+  const saleHint = hint('장특공제: '+saleTrans.lhdcType+'<br>'
+    +(saleTrans.is1HouseExempt ? '✅ 1주택 비과세: 보유2년+·거주2년+·시가12억↓ 충족<br>' : '')
+    +_saleAcqInfo);
+
+  // ── 저가양도 안내 (공통) ──
+  const lowPriceGuide = transfer > 0
+    ? '<div class="chart-wrap" style="padding:12px;margin-top:8px">'
+      +'<div class="chart-title">📌 저가양도 기준 (상증세법 §35)</div>'
+      +'<div style="font-size:10px;line-height:1.9;color:var(--text2)">'
+      +'기준차액 = MIN(시가×30%, 3억) = <b>'+wan(diffLimit)+'</b><br>'
+      +'저가양도 해당 없으려면 양도가 &gt; <b>'+wan(Math.round(lowPriceThreshold))+'</b><br>'
+      +'초과 시 의제 증여액 = 시가 − 양도가 − 기준차액 → 수증자 증여세 추가 과세'
+      +'</div></div>'
+    : '';
+
+  const detail3col = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px">'
+    + colWrap('🎁','순수 증여', cmp.pure.total===minTot, pureGiftTable+pureHint)
+    + colWrap('⚖️','부담부 증여', cmp.burden.total===minTot, detailTable(burdenGiftTableRows)+burdenHint)
+    + colWrap('🏷️','일반 양도', cmp.sale.total===minTot, detailTable(saleTableRows)+saleHint)
+    +'</div>'
+    + lowPriceGuide;
+
+  $('gf-detail').innerHTML = detail3col;
+}
+
 
 // ══ INIT ══
 initSliders();updateReal();
