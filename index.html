@@ -395,20 +395,17 @@ select option{background:#1e2130}
     <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-market" oninput="_autoGift();gfSyncDebtMax();gfPv('gf-market-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-market-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
     <div class="info-hint">
       ▸ <b>증여세</b>: 시가 우선 → 감정평가액 → 기준시가 순으로 적용<br>
-      ▸ <b>저가증여 기준</b>: 시가−증여가 &gt; MIN(시가×30%, 3억) 초과 시 의제증여 과세 (특수관계인)<br>
-      ▸ <b>저가양도 기준</b>: 시가−양도가 &gt; MIN(시가×30%, 3억) 초과 시 의제증여 과세<br>
-      ▸ <b>부당행위계산 부인</b>: 특수관계인 간 양도 시 차액 &gt; MIN(시가×5%, 3억) → 양도세 시가 기준
+      ▸ <b>저가양도·부당행위계산 부인</b>: 양도가액 입력 시 자동 판단 (아래 양도가액 항목 참고)
     </div>
-    <div id="gf-lowprice-box" class="gift-warn-box" style="margin-top:4px"></div>
 
-    <label style="margin-top:10px">증여가액 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 순수증여·부담부증여 신고가액</span></label>
+    <label style="margin-top:10px">증여신고가액 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 시가·감정평가액 기준</span></label>
     <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-giftamt" oninput="_autoGift();gfPv('gf-giftamt-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-giftamt-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
-    <div class="info-hint">미입력 시 시가 전액 기준. 감정평가 등으로 낮게 신고 시 입력 → 저가증여 자동 판단</div>
-    <div id="gf-lowgift-box" class="gift-warn-box" style="margin-top:4px"></div>
+    <div class="info-hint">미입력 시 시가 전액 기준 계산. 기준시가로 신고 시 과세관청이 감정평가로 경정할 수 있음</div>
 
     <label style="margin-top:10px">양도가액 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 일반양도·저가양도 판단 기준</span></label>
     <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-saleamt" oninput="_autoGift();gfPv('gf-saleamt-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-saleamt-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
-    <div class="info-hint">미입력 시 시가 전액 기준. 저가 매도 시 직접 입력 → 저가양도·부당행위계산부인 자동 판단</div>
+    <div class="info-hint">미입력 시 시가 전액 기준. 저가 매도 시 직접 입력하면 아래 두 항목 자동 판단</div>
+    <div id="gf-lowprice-box" class="gift-warn-box" style="margin-top:4px"></div>
     <div id="gf-unfair-box" class="gift-warn-box" style="margin-top:4px"></div>
 
     <label style="margin-top:10px">기준시가 / 공시가격 (만원)</label>
@@ -1910,6 +1907,7 @@ function runGift(){
     $('gift-empty').style.display='';
     $('gift-content').style.display='none';
     var lb=$('gf-lowprice-box'); if(lb){lb.className='gift-warn-box';lb.innerHTML='';}
+    var ub=$('gf-unfair-box'); if(ub){ub.className='gift-warn-box';ub.innerHTML='';}
     return;
   }
 
@@ -1934,45 +1932,22 @@ function runGift(){
     }
   }
 
-  // ── 저가증여 판단 (상증세법 §35) ──
-  // 증여가액이 입력된 경우에만 판단
+  // 증여신고가액 (시가 기준, 미입력 시 시가 전액)
   const giftPrice = giftamt > 0 ? giftamt : market;
-  const isRelated = (rel === 'child' || rel === 'minor' || rel === 'spouse'); // 특수관계인
-  const giftDiff = market - giftPrice;
-
-  const lowGiftBox = $('gf-lowgift-box');
-  if(lowGiftBox){
-    if(giftamt > 0 && giftamt < market){
-      // 특수관계인: 차액 > MIN(시가×30%, 3억) → 의제증여
-      // 비특수관계인: 차액 > 시가×30% → 의제증여 (공제는 3억)
-      const giftThreshold = isRelated ? Math.min(market*0.30, 30000) : market*0.30;
-      const giftDeduct    = isRelated ? Math.min(market*0.30, 30000) : 30000;
-      if(giftDiff >= giftThreshold){
-        const deemedGift = Math.max(0, giftDiff - giftDeduct);
-        lowGiftBox.className='gift-warn-box gift-warn-danger show';
-        lowGiftBox.innerHTML='<b>⚠ 저가증여 해당 (상증세법 §35)</b><br>'
-          +'시가('+wan(market)+') − 증여가액('+wan(giftPrice)+') = <b>'+wan(giftDiff)+'</b><br>'
-          +'기준: '+(isRelated?'특수관계인 MIN(시가×30%, 3억)':'비특수관계인 시가×30%')
-          +' = '+wan(giftThreshold)+'<br>'
-          +'<b>의제 증여재산가액: '+wan(deemedGift)+'</b><br>'
-          +'<span style="opacity:.8;font-size:10px">증여세 과세표준에 의제증여액이 추가됩니다</span>';
-      } else {
-        lowGiftBox.className='gift-warn-box gift-warn-notice show';
-        lowGiftBox.innerHTML='✅ 저가증여 해당 없음 — 차액('+wan(giftDiff)+')이 기준('+wan(giftThreshold)+') 미만';
-      }
-    } else {
-      lowGiftBox.className='gift-warn-box';
-      lowGiftBox.innerHTML='';
-    }
-  }
+  const isRelated = (rel === 'child' || rel === 'minor' || rel === 'spouse');
 
   // ── 부당행위계산 부인 판단 (소득세법 §101) ──
-  // 특수관계인 간 양도: 시가 - 양도가 > MIN(시가×5%, 3억) → 양도세 시가 기준 재산정
+  // 부당행위계산 부인: 특수관계인 간 양도에만 적용 (제3자 거래 시 미적용)
+  // 매수인이 직계존비속(related) + 양도가액 입력 시에만 판단
   const unfairBox = $('gf-unfair-box');
-  const unfairThreshold = Math.min(market * 0.05, 30000); // MIN(시가×5%, 3억)
-  let unfairApplied = false; // 부당행위계산부인 적용 여부
+  const unfairThreshold = Math.min(market * 0.05, 30000);
+  let unfairApplied = false;
   if(unfairBox){
-    if(saleamt > 0 && isRelated){
+    // 제3자 거래는 부당행위계산 부인 적용 안 됨
+    if(buyerType === 'third'){
+      unfairBox.className='gift-warn-box';
+      unfairBox.innerHTML='';
+    } else if(saleamt > 0){
       const saleDiff = market - saleamt;
       if(saleDiff > unfairThreshold){
         unfairApplied = true;
@@ -1981,10 +1956,11 @@ function runGift(){
           +'시가('+wan(market)+') − 양도가('+wan(saleamt)+') = <b>'+wan(saleDiff)+'</b><br>'
           +'기준 MIN(시가×5%, 3억) = '+wan(unfairThreshold)+'<br>'
           +'<b>양도세를 시가('+wan(market)+') 기준으로 재산정합니다</b><br>'
-          +'<span style="opacity:.8;font-size:10px">양도자의 양도소득세는 실제 양도가액 아닌 시가로 계산</span>';
+          +'<span style="opacity:.8;font-size:10px">특수관계인(직계존비속) 간 저가양도 시 적용 (소득세법 §101)</span>';
       } else if(saleDiff > 0){
         unfairBox.className='gift-warn-box gift-warn-notice show';
-        unfairBox.innerHTML='✅ 부당행위계산 부인 해당 없음 — 차액('+wan(saleDiff)+')이 기준('+wan(unfairThreshold)+') 이하';
+        unfairBox.innerHTML='✅ 부당행위계산 부인 해당 없음 — 차액('+wan(saleDiff)+')이 기준('+wan(unfairThreshold)+') 이하<br>'
+          +'<span style="opacity:.8;font-size:10px">특수관계인 간 거래이나 기준 이하</span>';
       } else {
         unfairBox.className='gift-warn-box';
         unfairBox.innerHTML='';
