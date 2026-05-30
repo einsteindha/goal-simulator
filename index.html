@@ -1705,7 +1705,7 @@ function calcAllThree(market, std, cost, debt, tenant, hold, live, rel, prior, h
   const bTotalBurden = debt + tenant;
   const bGiftBase = Math.max(0, market - bTotalBurden);
   const bGft = calcGiftTax(bGiftBase, rel, prior);
-  const bTrans = bTotalBurden>0 ? calcTransferTax(market, cost, bTotalBurden, hold, live, htype, assettype) : null;
+  const bTrans = bTotalBurden>0 ? calcTransferTax(market, cost, bTotalBurden, hold, live, htype, assettype, isAdj2) : null;
   const bGiftPart = Math.max(0, market - bTotalBurden);
   const bAcqGift = Math.round(bGiftPart * giftAcqRate);
   const bAcqPaid = Math.round(bTotalBurden * paidAcqRate);
@@ -1715,7 +1715,7 @@ function calcAllThree(market, std, cost, debt, tenant, hold, live, rel, prior, h
 
   // ── C. 일반 양도 ──
   const salePrice = unfairApplied ? market : (saleamt > 0 ? saleamt : market);
-  const cTrans = calcTransferTax(market, cost, salePrice, hold, live, htype, assettype);
+  const cTrans = calcTransferTax(market, cost, salePrice, hold, live, htype, assettype, isAdj2);
   // 매수자: 유상 취득세 (1~3%)
   const cAcqPaid = Math.round(market * paidAcqRate);
   const cTotalA = cAcqPaid;                          // 매수자(자녀) 부담
@@ -1786,7 +1786,7 @@ function renderCompare(cmp, type){
     +'<div class="compare-grid">'+cards+'</div>'
     +'<div style="font-size:10px;color:var(--text3);margin-bottom:4px">※ 현재 선택: <b style="color:var(--accent)">'
     +(type==='pure'?'순수 증여':type==='burden'?'부담부 증여':'일반 양도')
-    +'</b> 기준으로 상세 계산 표시 | 다주택 중과 유예(~2026.5.9) 기간 중 일반세율 기준</div>';
+    +'</b> 기준으로 상세 계산 표시 | 2026.5.10 이후 조정지역 다주택 중과 적용 (유예 종료)</div>';
 }
 
 function calcGiftTax(taxBase, rel, prior, wedding, skipGen){
@@ -1837,7 +1837,8 @@ function calcGiftTax(taxBase, rel, prior, wedding, skipGen){
   };
 }
 
-function calcTransferTax(market, cost, debt, hold, live, htype, assettype){
+function calcTransferTax(market, cost, debt, hold, live, htype, assettype, isAdj){
+  isAdj = isAdj || false;
   // 국세청 기준: 양도가액·취득가액 = 당해자산가액 × (채무/시가) 비율
   const ratio = debt / market;
   const transCost = cost * ratio;   // 취득가액 안분 (실지취득가액 기준)
@@ -1845,26 +1846,35 @@ function calcTransferTax(market, cost, debt, hold, live, htype, assettype){
   const gain = Math.max(0, transPrice - transCost);
 
   // ── 장기보유특별공제 ──
+  // 구분:
+  // ① 1세대 1주택 + 거주 2년↑: 보유×4% + 거주×4%, 최대 80% (고가 여부 무관)
+  // ② 1세대 1주택 + 거주 2년 미만: 보유×2%, 최대 30% (고율공제 자격 미충족)
+  // ③ 일반(다주택·건물·토지·비규제): 보유×2%, 최대 30%
+  // ④ 다주택 중과(조정): 장특공제 전면 배제 (아래 isMultiHouse에서 처리)
   let lhdc = 0, lhdcType = '', exemptNote = '';
   const isHighPrice = market > 120000;
   const is1House = (htype === 'one');
   const isHouse = (assettype !== 'building');
+  const has2yrLive = live >= 2; // 거주 2년 이상 여부
 
-  // 1세대 1주택 비과세 판단 (주택만, 시가 12억 이하, 보유 2년+, 거주 2년+)
-  const is1HouseExempt = isHouse && is1House && !isHighPrice && hold >= 2 && live >= 2;
+  // 1세대 1주택 비과세 판단 (주택, 시가 12억 이하, 보유 2년+, 거주 2년+)
+  const is1HouseExempt = isHouse && is1House && !isHighPrice && hold >= 2 && has2yrLive;
 
   if(hold >= 3){
-    if(isHouse && is1House && isHighPrice && live >= 2){
+    if(isHouse && is1House && has2yrLive){
+      // ① 1주택 + 거주 2년↑: 고율공제 (보유×4% + 거주×4%, 최대 80%)
       const holdDed = Math.min(hold * 4, 40);
       const liveDed = Math.min(live * 4, 40);
       lhdc = Math.min(holdDed + liveDed, 80);
-      lhdcType = '1주택 고가 (보유'+hold+'년×4% + 거주'+live+'년×4%)';
-    } else if(isHouse && is1House && isHighPrice && live < 2){
-      lhdc = Math.min(hold * 4, 40);
-      lhdcType = '1주택 고가 거주미충족 (보유'+hold+'년×4%)';
-    } else {
+      lhdcType = '1주택 고율공제 (보유'+hold+'년×4%+거주'+live+'년×4% = '+lhdc+'%)';
+    } else if(isHouse && is1House && !has2yrLive){
+      // ② 1주택이지만 거주요건 미충족 → 일반공제(보유×2%)로 하향
       lhdc = Math.min(hold * 2, 30);
-      lhdcType = (isHouse?'주택':'건물·토지')+' 일반 (보유'+hold+'년×2%)';
+      lhdcType = '1주택 거주요건 미충족 → 일반공제 (보유'+hold+'년×2%, 최대 30%)';
+    } else {
+      // ③ 다주택·건물·토지: 보유×2%, 최대 30%
+      lhdc = Math.min(hold * 2, 30);
+      lhdcType = (isHouse?'일반주택(다주택)':'건물·토지')+' (보유'+hold+'년×2%, 최대 30%)';
     }
   }
 
@@ -1887,8 +1897,11 @@ function calcTransferTax(market, cost, debt, hold, live, htype, assettype){
   const basicDed = is1HouseExempt ? 0 : 250;
   const taxable = Math.max(0, taxableGain - deductAmt - basicDed);
 
-  // 양도세 세율 (단기: 1년미만 70%, 1~2년미만 60%, 일반세율 적용)
-  // hold < 1: 1년미만, hold < 2: 2년미만 (is1HouseExempt는 이미 false인 경우만 옴)
+  // 양도세 세율 계산
+  // - 다주택 중과: 조정대상지역 + 주택 + 다주택(multi2/multi3) 시 적용 (2026.5.10 중과 부활)
+  // - 단기 중과: 보유 1년 미만 70%, 1~2년 미만 60% (주택)
+  // - 단기 중과가 다주택 중과보다 우선 (더 높은 세율 적용)
+
   function generalRate(v){
     if(v<=14000) return v*0.06;
     if(v<=50000) return 840+(v-14000)*0.15;
@@ -1898,25 +1911,48 @@ function calcTransferTax(market, cost, debt, hold, live, htype, assettype){
     if(v<=500000)return 94060+(v-300000)*0.40;
     return 174060+(v-500000)*0.42;
   }
+
+  // 다주택 중과 여부 판단 (조정대상지역 + 주택 + 다주택)
+  // isAdj 파라미터 필요 → calcTransferTax에 isAdj 추가
+  const isMultiHouse = isHouse && isAdj && (htype==='multi2'||htype==='multi3');
+  const surchargeRate = isMultiHouse ? (htype==='multi3'?0.30:0.20) : 0;
+  const surcharge = surchargeRate * 100; // 반환값용 (%)
+
+  // 다주택 중과 시 장특공제 배제
+  let effectiveLhdc = lhdc;
+  let effectiveDeductAmt = deductAmt;
+  let effectiveTaxable = taxable;
+  if(isMultiHouse){
+    effectiveLhdc = 0;
+    effectiveDeductAmt = 0;
+    effectiveTaxable = Math.max(0, taxableGain - basicDed);
+  }
+
   let tax, rateNote='';
   if(!is1HouseExempt && hold < 1){
-    // 1년 미만: 70% 단일세율 (주택 기준)
-    tax = taxable * 0.70;
+    // 단기 1년 미만: 70% (단기 > 다주택 중과)
+    tax = effectiveTaxable * 0.70;
     rateNote = '단기(1년미만) 70%';
   } else if(!is1HouseExempt && hold < 2){
-    // 1~2년 미만: 60% 단일세율 (주택), 일반건물은 일반세율
-    if(isHouse){ tax = taxable * 0.60; rateNote = '단기(2년미만) 60%'; }
-    else { tax = generalRate(taxable); rateNote = '일반세율'; }
+    // 단기 2년 미만: 주택 60% (단기 > 다주택 중과)
+    if(isHouse){ tax = effectiveTaxable * 0.60; rateNote = '단기(2년미만) 60%'; }
+    else { tax = generalRate(effectiveTaxable); rateNote = '일반세율'; }
+  } else if(isMultiHouse){
+    // 다주택 중과: 기본세율 + 가산세율
+    const baseTaxAmt = generalRate(effectiveTaxable);
+    tax = baseTaxAmt + effectiveTaxable * surchargeRate;
+    rateNote = '다주택 중과 기본+'+(surchargeRate*100).toFixed(0)+'%p ('+(htype==='multi3'?'3주택↑':'2주택')+', 조정지역)';
   } else {
-    tax = generalRate(taxable); rateNote = '일반누진세율';
+    tax = generalRate(effectiveTaxable); rateNote = '일반누진세율';
   }
   const localTax = tax * 0.1;
 
-  // 다주택 중과 (현재 2026.5.9까지 유예 중 → 유예 안내만)
-  const surcharge = htype==='multi2'?20: htype==='multi3'?30:0;
-
-  return {ratio, gain, lhdc, lhdcType, deductAmt, taxable, taxableGain, tax, localTax,
-          total: tax+localTax, surcharge, isHighPrice, is1House, is1HouseExempt, exemptGain,
+  return {ratio, gain,
+          lhdc: effectiveLhdc, lhdcType,
+          deductAmt: effectiveDeductAmt,
+          taxable: effectiveTaxable, taxableGain, tax, localTax,
+          total: tax+localTax, surcharge, surchargeRate, isMultiHouse,
+          isHighPrice, is1House, is1HouseExempt, exemptGain,
           rateNote, highPriceNote};
 }
 
@@ -2093,7 +2129,7 @@ function runGift(){
   const totalBurden = type==='burden' ? debt + tenant : 0;
   let trans = null;
   if(type==='burden' && totalBurden>0){
-    trans = calcTransferTax(market, cost, totalBurden, hold, live, htype, assettype);
+    trans = calcTransferTax(market, cost, totalBurden, hold, live, htype, assettype, isAdj);
   }
 
   // ── 취득세 (분리 계산) ──
@@ -2171,12 +2207,17 @@ function runGift(){
   $('gf-compare').innerHTML = renderCompare(cmp, type);
 
   // 다주택 중과 유예 안내 배너
+  // 다주택 중과 안내 (2026.5.10 이후 조정지역 한정 실제 적용)
   let surchargeNotice = '';
-  if(trans && (htype==='multi2'||htype==='multi3')){
-    surchargeNotice = '<div style="margin:8px 0;padding:10px 14px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:var(--radius);font-size:11px;color:#fcd34d">'+
-      '⚠ <b>다주택 양도세 중과 유예 중</b> (2022.5.10 ~ 2026.5.9)<br>'+
-      '현재는 일반세율로 계산됩니다. 유예 종료(2026.5.10) 후엔 '+
-      (htype==='multi2'?'+20%p':'+30%p')+' 중과세율 적용 예정</div>';
+  if(trans && trans.isMultiHouse){
+    surchargeNotice = '<div style="margin:8px 0;padding:10px 14px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:var(--radius);font-size:11px;color:#fca5a5">'+
+      '⚠ <b>다주택 양도세 중과 적용</b> (2026.5.10 중과 부활, 조정대상지역)<br>'+
+      (htype==='multi2'?'2주택: 기본세율 + 20%p 가산 / ':'3주택↑: 기본세율 + 30%p 가산 / ')+
+      '장기보유특별공제 <b>전면 배제</b><br>'+
+      '<span style="font-size:10px;opacity:.8">지방소득세 포함 최고 '+(htype==='multi2'?'65%':'75%')+'(지방소득세 포함 최고 '+(htype==='multi2'?'71.5%':'82.5%')+')</span></div>';
+  } else if(trans && (htype==='multi2'||htype==='multi3') && !isAdj){
+    surchargeNotice = '<div style="margin:8px 0;padding:10px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:var(--radius);font-size:11px;color:#fcd34d">'+
+      'ℹ 비조정대상지역 다주택: 중과 미적용, 일반세율 적용</div>';
   }
 
   // KPI 카드
@@ -2195,7 +2236,7 @@ function runGift(){
   // 일반양도 계산 (C 케이스와 동일 로직)
   // 부당행위계산부인 적용 시 양도가액을 시가로 대체
   const salePrice = (unfairApplied) ? market : (saleamt > 0 ? saleamt : market);
-  const saleTrans = calcTransferTax(market, cost, salePrice, hold, live, htype, assettype);
+  const saleTrans = calcTransferTax(market, cost, salePrice, hold, live, htype, assettype, isAdj);
   const saleAcqPaid = Math.round(salePrice * saleAcqRate);
 
   function colWrap(icon, title, isBest, content){
@@ -2260,7 +2301,9 @@ function runGift(){
       burdenGiftTableRows.push(['양도가액', wan(Math.round(trans.ratio*market))]);
       burdenGiftTableRows.push(['취득가액 안분', '− '+wan(Math.round(trans.transCost)), 't-pos']);
       burdenGiftTableRows.push(['양도차익', wan(Math.round(trans.gain))]);
-      burdenGiftTableRows.push(['장특공제 '+trans.lhdc+'%', '− '+wan(Math.round(trans.deductAmt)), 't-pos']);
+      burdenGiftTableRows.push(trans.isMultiHouse
+        ? ['장특공제 (중과 — 배제)', '0 (배제)', 't-neg']
+        : ['장특공제 '+trans.lhdc+'%', '− '+wan(Math.round(trans.deductAmt)), 't-pos']);
       burdenGiftTableRows.push(['양도세+지방세', wan(Math.round(trans.total)), 't-neg fw-bold']);
     }
   }
@@ -2287,7 +2330,9 @@ function runGift(){
     unfairApplied ? ['양도가액 (시가 기준 재산정)', wan(salePrice), 't-neg'] : ['양도가액', wan(salePrice)],
     ['취득가액', '− '+wan(cost), 't-pos'],
     ['양도차익', wan(Math.round(saleTrans.gain))],
-    ['장특공제 '+saleTrans.lhdc+'%', '− '+wan(Math.round(saleTrans.deductAmt)), 't-pos'],
+    saleTrans.isMultiHouse
+      ? ['장특공제 (중과 — 배제)', '0 (배제)', 't-neg']
+      : ['장특공제 '+saleTrans.lhdc+'%', '− '+wan(Math.round(saleTrans.deductAmt)), 't-pos'],
     ['기본공제', '− 250만', 't-pos'],
     ['과세표준', wan(Math.round(saleTrans.taxable)), 'fw-bold'],
   ];
@@ -2317,6 +2362,9 @@ function runGift(){
   const _saleAcqInfo = buyerType==='third'
     ? '제3자 매수 → 취득세 합계 미포함 (매수자 별도 부담)'
     : '매수인('+buyerHouseLabel[buyerHouse]+') 유상취득세 '+(saleAcqRate*100).toFixed(0)+'%';
+  const _liveWarning = (is1House && !saleTrans.isMultiHouse && live < 2 && hold >= 3)
+    ? '<br><b style="color:var(--amber)">⚠ 거주요건 미충족 (거주 '+live+'년 < 2년) → 고율공제(80%) 불가, 일반공제(보유×2%) 적용</b>'
+    : '';
   const _deemedInfo = saleDeemedGiftTax > 0
     ? '<br><b style="color:var(--amber)">⚠ 저가양도 해당 — 매수인 의제증여세 '+wan(saleDeemedGiftTax)+' 포함</b><br>'
       +'의제증여액 '+wan(saleDeemedGift)+' (차액 '+wan(saleDiffAmt)+'− 기준 '+wan(diffLimit)+')<br>'
@@ -2324,7 +2372,7 @@ function runGift(){
     : '';
   const saleHint = hint('장특공제: '+saleTrans.lhdcType+'<br>'
     +(saleTrans.is1HouseExempt ? '✅ 1주택 비과세: 보유2년+·거주2년+·시가12억↓ 충족<br>' : '')
-    +_saleAcqInfo+_deemedInfo);
+    +_saleAcqInfo+_liveWarning+_deemedInfo);
 
   // 비교카드 totals: 일반양도는 의제증여세 포함 금액으로
   const totals3 = [cmp.pure.total, cmp.burden.total, saleTotalWithDeemed];
