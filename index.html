@@ -402,10 +402,11 @@ select option{background:#1e2130}
     <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-giftamt" min="0" oninput="_autoGift();gfPv('gf-giftamt-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-giftamt-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
     <div class="info-hint">미입력 시 시가 전액 기준 계산. 기준시가로 신고 시 과세관청이 감정평가로 경정할 수 있음</div>
 
-    <label style="margin-top:10px">양도가액 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 일반양도·저가양도 판단 기준</span></label>
+    <label style="margin-top:10px">양도가액 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 저가양도(↓) · 고가양수(↑) · 부당행위계산 부인 자동 판단</span></label>
     <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-saleamt" min="0" oninput="_autoGift();gfPv('gf-saleamt-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-saleamt-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
     <div class="info-hint">미입력 시 시가 전액 기준. 저가 매도 시 직접 입력하면 아래 두 항목 자동 판단</div>
     <div id="gf-lowprice-box" class="gift-warn-box" style="margin-top:4px"></div>
+    <div id="gf-highprice-box" class="gift-warn-box" style="margin-top:4px"></div>
     <div id="gf-unfair-box" class="gift-warn-box" style="margin-top:4px"></div>
 
     <label style="margin-top:10px">기준시가 / 공시가격 (만원)</label>
@@ -1956,16 +1957,21 @@ function runGift(){
     $('gift-empty').style.display='';
     $('gift-content').style.display='none';
     var lb=$('gf-lowprice-box'); if(lb){lb.className='gift-warn-box';lb.innerHTML='';}
+    var hb=$('gf-highprice-box'); if(hb){hb.className='gift-warn-box';hb.innerHTML='';}
     var ub=$('gf-unfair-box'); if(ub){ub.className='gift-warn-box';ub.innerHTML='';}
     return;
   }
 
-  // ── 저가양도 판단 (상증세법 §35) ──
-  // 특수관계인: 차액 >= 시가×30% OR 차액 >= 3억  /  비특수관계인: 차액 >= 시가×30% 만
+  // ── 저가양도 · 고가양수 판단 (상증세법 §35) ──
+  // 저가양도: 양도가액 < 시가 → 매수자에게 증여세
+  // 고가양수: 양도가액 > 시가 → 매도자에게 증여세
+  // 특수관계인: 차액 >= 시가×30% OR 3억 / 비특수관계인: 차액 >= 시가×30% 만
   const diff30pct = Math.round(market*0.30);
   const diff3bil  = 30000;
-  const diffAmt   = transfer>0 ? Math.max(0,market-transfer) : 0;
   const isRelatedTransfer = (buyerType!=='third');
+
+  // 저가양도: transfer < market
+  const diffAmt = transfer>0 ? Math.max(0,market-transfer) : 0;
   let lowPriceHit=false;
   if(transfer>0&&diffAmt>0){
     lowPriceHit=isRelatedTransfer?(diffAmt>=diff30pct||diffAmt>=diff3bil):(diffAmt>=diff30pct);
@@ -1977,6 +1983,18 @@ function runGift(){
   const diffLimit=isRelatedTransfer?Math.min(diff30pct,diff3bil):diff3bil;
   const lowPriceThreshold=market-(isRelatedTransfer?Math.min(diff30pct,diff3bil):diff30pct);
 
+  // 고가양수: transfer > market
+  const highAmt = transfer>0 ? Math.max(0,transfer-market) : 0;
+  let highPriceHit=false;
+  if(transfer>0&&highAmt>0){
+    highPriceHit=isRelatedTransfer?(highAmt>=diff30pct||highAmt>=diff3bil):(highAmt>=diff30pct);
+  }
+  let highDeemedAmt=0;
+  if(highPriceHit){
+    highDeemedAmt=isRelatedTransfer?Math.max(0,highAmt-Math.min(diff30pct,diff3bil)):Math.max(0,highAmt-diff3bil);
+  }
+
+  // 저가양도 경고박스
   const lowPriceBox=$('gf-lowprice-box');
   if(lowPriceBox){
     if(transfer>0&&diffAmt>0){
@@ -1988,10 +2006,10 @@ function runGift(){
           ?'특수관계인: 시가x30%('+wan(diff30pct)+') 이상 OR 3억 이상 -> 충족'
           :'비특수관계인: 시가x30%('+wan(diff30pct)+') 이상 -> 충족';
         lowPriceBox.className='gift-warn-box gift-warn-danger show';
-        lowPriceBox.innerHTML='<b>! 저가양도 해당 (상증세법 35)</b><br>'
+        lowPriceBox.innerHTML='<b>⬇ 저가양도 해당 (상증세법 §35) — 매수자 증여세</b><br>'
           +reqStr+'<br>'
           +'증여재산가액: '+deductStr+' = <b>'+wan(deemedGiftAmt)+'</b><br>'
-          +'<span style="color:var(--text3);font-size:10px">매수자에게 의제 증여세 추가 과세</span>';
+          +'<span style="color:var(--text3);font-size:10px">매수자(양수자)가 이익 → 매수자에게 증여세 부과</span>';
       } else {
         const notReq=isRelatedTransfer
           ?'차액('+wan(diffAmt)+')이 시가x30%('+wan(diff30pct)+') 미만 AND 3억 미만'
@@ -2000,6 +2018,33 @@ function runGift(){
         lowPriceBox.innerHTML='저가양도 해당 없음: '+notReq;
       }
     } else {lowPriceBox.className='gift-warn-box';lowPriceBox.innerHTML='';}
+  }
+
+  // 고가양수 경고박스
+  const highPriceBox=$('gf-highprice-box');
+  if(highPriceBox){
+    if(transfer>0&&highAmt>0){
+      if(highPriceHit){
+        const hDeductStr=isRelatedTransfer
+          ?'차액 - MIN(시가x30%, 3억) = '+wan(highAmt)+' - '+wan(Math.min(diff30pct,diff3bil))
+          :'차액 - 3억 = '+wan(highAmt)+' - '+wan(diff3bil);
+        const hReqStr=isRelatedTransfer
+          ?'특수관계인: 시가x30%('+wan(diff30pct)+') 이상 OR 3억 이상 -> 충족'
+          :'비특수관계인: 시가x30%('+wan(diff30pct)+') 이상 -> 충족';
+        highPriceBox.className='gift-warn-box gift-warn-danger show';
+        highPriceBox.innerHTML='<b>⬆ 고가양수 해당 (상증세법 §35) — 매도자 증여세</b><br>'
+          +hReqStr+'<br>'
+          +'양도가('+wan(transfer)+') - 시가('+wan(market)+') = <b>'+wan(highAmt)+'</b><br>'
+          +'증여재산가액: '+hDeductStr+' = <b>'+wan(highDeemedAmt)+'</b><br>'
+          +'<span style="color:var(--text3);font-size:10px">매도자(양도자)가 이익 → 매도자에게 증여세 부과</span>';
+      } else {
+        const hNotReq=isRelatedTransfer
+          ?'차액('+wan(highAmt)+')이 시가x30%('+wan(diff30pct)+') 미만 AND 3억 미만'
+          :'차액('+wan(highAmt)+')이 시가x30%('+wan(diff30pct)+') 미만';
+        highPriceBox.className='gift-warn-box gift-warn-notice show';
+        highPriceBox.innerHTML='고가양수 해당 없음: '+hNotReq;
+      }
+    } else {highPriceBox.className='gift-warn-box';highPriceBox.innerHTML='';}
   }
 
   const giftPrice=giftamt>0?giftamt:market;
@@ -2290,9 +2335,13 @@ function runGift(){
     ?'<div class="chart-wrap" style="padding:12px;margin-top:8px">'
       +'<div class="chart-title">저가양도/부당행위계산부인 기준</div>'
       +'<div style="font-size:10px;line-height:1.9;color:var(--text2)">'
-      +'특수관계인 저가양도: 차액 >= 시가x30%('+wan(diff30pct)+') OR 3억 -> 의제증여세(매수자)<br>'
-      +'비특수관계인: 차액 >= 시가x30%('+wan(diff30pct)+') -> 3억 공제 후 의제증여세<br>'
-      +'부당행위계산부인: 차액 >= 시가x5%('+wan(unfair5pct)+') OR 3억 -> 양도세 시가 기준(특수관계인만)'
+      +'<b>저가양도</b> (양도가 < 시가) — 매수자에게 증여세<br>'
+      +'특수관계인: 차액 >= 시가x30%('+wan(diff30pct)+') OR 3억 -> 증여재산가액=차액-MIN(30%,3억)<br>'
+      +'비특수관계인: 차액 >= 시가x30%('+wan(diff30pct)+') -> 증여재산가액=차액-3억<br>'
+      +'<b>고가양수</b> (양도가 > 시가) — 매도자에게 증여세<br>'
+      +'동일한 기준(30%/3억 OR) 적용, 매도자가 이익을 본 차액에서 공제 후 과세<br>'
+      +'<b>부당행위계산부인 (소득세법 §101, 특수관계인만)</b><br>'
+      +'차액 >= 시가x5%('+wan(unfair5pct)+') OR 3억 -> 양도세 시가 기준 재산정'
       +'</div></div>'
     :'';
 
