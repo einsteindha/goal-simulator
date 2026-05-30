@@ -392,28 +392,28 @@ select option{background:#1e2130}
     <div class="info-hint" id="gf-assettype-hint">주택: 1주택 비과세·장특공제 거주요건 적용 / 일반건물·토지: 보유 연2% 최대 30% 공제만 적용</div>
 
     <label style="margin-top:10px">주택 가격 (시가·감정평가액) (만원)</label>
-    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-market" oninput="_autoGift();gfSyncDebtMax();gfPv('gf-market-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-market-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
+    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-market" min="0" oninput="_autoGift();gfSyncDebtMax();gfPv('gf-market-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-market-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
     <div class="info-hint">
       ▸ <b>증여세</b>: 시가 우선 → 감정평가액 → 기준시가 순으로 적용<br>
       ▸ <b>저가양도·부당행위계산 부인</b>: 양도가액 입력 시 자동 판단 (아래 양도가액 항목 참고)
     </div>
 
     <label style="margin-top:10px">증여신고가액 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 시가·감정평가액 기준</span></label>
-    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-giftamt" oninput="_autoGift();gfPv('gf-giftamt-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-giftamt-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
+    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-giftamt" min="0" oninput="_autoGift();gfPv('gf-giftamt-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-giftamt-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
     <div class="info-hint">미입력 시 시가 전액 기준 계산. 기준시가로 신고 시 과세관청이 감정평가로 경정할 수 있음</div>
 
     <label style="margin-top:10px">양도가액 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 일반양도·저가양도 판단 기준</span></label>
-    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-saleamt" oninput="_autoGift();gfPv('gf-saleamt-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-saleamt-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
+    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-saleamt" min="0" oninput="_autoGift();gfPv('gf-saleamt-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-saleamt-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
     <div class="info-hint">미입력 시 시가 전액 기준. 저가 매도 시 직접 입력하면 아래 두 항목 자동 판단</div>
     <div id="gf-lowprice-box" class="gift-warn-box" style="margin-top:4px"></div>
     <div id="gf-unfair-box" class="gift-warn-box" style="margin-top:4px"></div>
 
     <label style="margin-top:10px">기준시가 / 공시가격 (만원)</label>
-    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-std" oninput="_autoGift();gfPv('gf-std-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-std-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
+    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-std" oninput="_autoGift();gfPv('gf-std-pv',this.value);" value="" step="1000" min="0" style="width:100%"><span class="unit">만원</span></div><span id="gf-std-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
     <div class="info-hint">취득세 중과(12%) 판단 기준 — 조정지역+공시가 3억 이상 여부</div>
 
     <label style="margin-top:10px">실지 취득가액 (만원)</label>
-    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-cost" oninput="_autoGift();gfPv('gf-cost-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-cost-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
+    <div style="display:flex;align-items:center;gap:6px"><div class="input-unit" style="flex:1"><input type="number" id="gf-cost" min="0" oninput="_autoGift();gfPv('gf-cost-pv',this.value);" value="" step="1000" style="width:100%"><span class="unit">만원</span></div><span id="gf-cost-pv" class="cs-preview" style="min-width:42px;text-align:right"></span></div>
     <div class="info-hint">양도세 취득가액. 불분명 시 기준시가로 대체 가능</div>
 
     <label style="margin-top:10px">보유 기간 (년)</label>
@@ -1679,11 +1679,11 @@ function gfToggleBuyerHouse(){
     :'직계존비속: 저가양도 이슈 적용 / 취득세 합계에 포함';
 }
 function gfSyncDebtMax(){
-  var market=+document.getElementById('gf-market').value||50000;
+  var market=+document.getElementById('gf-market').value||0;
   var sl=document.getElementById('gf-debt');
   if(sl){ sl.max=market; if(+sl.value>market){sl.value=market;document.getElementById('gf-debt-num').value=market;document.getElementById('gf-debt-v').textContent=market+'만';} var mx=market;sl.style.setProperty('--pct',(+sl.value/mx*100).toFixed(1)+'%'); }
 }
-function calcAllThree(market, std, cost, debt, tenant, hold, live, rel, prior, htype, isAdj, assettype, saleamt, granteeHouse, buyerType, buyerHouse, isAdj2, giftPrice, unfairApplied){
+function calcAllThree(market, std, cost, debt, tenant, hold, live, rel, prior, htype, isAdj, assettype, saleamt, granteeHouse, buyerType, buyerHouse, isAdj2, giftPrice, unfairApplied, wedding, skipGen){
   const _stdOver3 = std>=30000;
   function _giftRate(gh){ return (isAdj2&&_stdOver3&&(gh==='multi2'||gh==='multi3'))?0.12:0.035; }
   function _paidRate(bh){ if(!isAdj2){if(bh==='multi3')return 0.08;if(bh==='multi4')return 0.12;return 0.03;} if(bh==='multi2')return 0.08;if(bh==='multi3'||bh==='multi4')return 0.12;return 0.03; }
@@ -1960,64 +1960,79 @@ function runGift(){
     return;
   }
 
-  // ── 저가양도 판단 ──
-  const diffLimit = Math.min(market*0.30, 30000);
-  const lowPriceThreshold = market - diffLimit;
-  const lowPriceBox = $('gf-lowprice-box');
+  // ── 저가양도 판단 (상증세법 §35) ──
+  // 특수관계인: 차액 >= 시가×30% OR 차액 >= 3억  /  비특수관계인: 차액 >= 시가×30% 만
+  const diff30pct = Math.round(market*0.30);
+  const diff3bil  = 30000;
+  const diffAmt   = transfer>0 ? Math.max(0,market-transfer) : 0;
+  const isRelatedTransfer = (buyerType!=='third');
+  let lowPriceHit=false;
+  if(transfer>0&&diffAmt>0){
+    lowPriceHit=isRelatedTransfer?(diffAmt>=diff30pct||diffAmt>=diff3bil):(diffAmt>=diff30pct);
+  }
+  let deemedGiftAmt=0;
+  if(lowPriceHit){
+    deemedGiftAmt=isRelatedTransfer?Math.max(0,diffAmt-Math.min(diff30pct,diff3bil)):Math.max(0,diffAmt-diff3bil);
+  }
+  const diffLimit=isRelatedTransfer?Math.min(diff30pct,diff3bil):diff3bil;
+  const lowPriceThreshold=market-(isRelatedTransfer?Math.min(diff30pct,diff3bil):diff30pct);
+
+  const lowPriceBox=$('gf-lowprice-box');
   if(lowPriceBox){
-    if(transfer>0 && transfer<=lowPriceThreshold){
-      const deemedGift = Math.max(0, market-transfer-diffLimit);
-      lowPriceBox.className='gift-warn-box gift-warn-danger show';
-      lowPriceBox.innerHTML='<b>⚠ 저가양도 해당</b><br>'+
-        '시가('+wan(market)+') − 양도가('+wan(transfer)+') = '+wan(market-transfer)+'<br>'+
-        '기준차액 MIN(시가×30%, 3억) = '+wan(diffLimit)+'<br>'+
-        '<b>의제 증여액: '+wan(deemedGift)+'</b><br>'+
-        '<span style="color:var(--text3);font-size:10px">과세당국이 의제 증여액을 수증자에게 추가 과세할 수 있습니다</span>';
-    } else if(transfer>0){
-      lowPriceBox.className='gift-warn-box gift-warn-notice show';
-      lowPriceBox.innerHTML='✅ 저가양도 해당 없음 — 차액이 기준('+wan(diffLimit)+') 이내';
-    } else {
-      lowPriceBox.className='gift-warn-box'; lowPriceBox.innerHTML='';
-    }
+    if(transfer>0&&diffAmt>0){
+      if(lowPriceHit){
+        const deductStr=isRelatedTransfer
+          ?'차액 - MIN(시가x30%, 3억) = '+wan(diffAmt)+' - '+wan(Math.min(diff30pct,diff3bil))
+          :'차액 - 3억 = '+wan(diffAmt)+' - '+wan(diff3bil);
+        const reqStr=isRelatedTransfer
+          ?'특수관계인: 시가x30%('+wan(diff30pct)+') 이상 OR 3억 이상 -> 충족'
+          :'비특수관계인: 시가x30%('+wan(diff30pct)+') 이상 -> 충족';
+        lowPriceBox.className='gift-warn-box gift-warn-danger show';
+        lowPriceBox.innerHTML='<b>! 저가양도 해당 (상증세법 35)</b><br>'
+          +reqStr+'<br>'
+          +'증여재산가액: '+deductStr+' = <b>'+wan(deemedGiftAmt)+'</b><br>'
+          +'<span style="color:var(--text3);font-size:10px">매수자에게 의제 증여세 추가 과세</span>';
+      } else {
+        const notReq=isRelatedTransfer
+          ?'차액('+wan(diffAmt)+')이 시가x30%('+wan(diff30pct)+') 미만 AND 3억 미만'
+          :'차액('+wan(diffAmt)+')이 시가x30%('+wan(diff30pct)+') 미만';
+        lowPriceBox.className='gift-warn-box gift-warn-notice show';
+        lowPriceBox.innerHTML='저가양도 해당 없음: '+notReq;
+      }
+    } else {lowPriceBox.className='gift-warn-box';lowPriceBox.innerHTML='';}
   }
 
-  // 증여신고가액 (시가 기준, 미입력 시 시가 전액)
-  const giftPrice = giftamt > 0 ? giftamt : market;
-  const isRelated = (rel === 'child' || rel === 'minor' || rel === 'spouse');
+  const giftPrice=giftamt>0?giftamt:market;
+  const isRelated=(rel==='child'||rel==='minor'||rel==='spouse'||rel==='grandchild');
 
-  // ── 부당행위계산 부인 판단 (소득세법 §101) ──
-  // 부당행위계산 부인: 특수관계인 간 양도에만 적용 (제3자 거래 시 미적용)
-  // 매수인이 직계존비속(related) + 양도가액 입력 시에만 판단
-  const unfairBox = $('gf-unfair-box');
-  const unfairThreshold = Math.min(market * 0.05, 30000);
-  let unfairApplied = false;
+  // ── 부당행위계산 부인 (소득세법 §101) ──
+  // 특수관계인 간 양도에만 적용 / 과세요건: 차액 >= 시가x5% OR 차액 >= 3억
+  const unfairBox=$('gf-unfair-box');
+  const unfair5pct=Math.round(market*0.05);
+  const unfair3bil=30000;
+  let unfairApplied=false;
   if(unfairBox){
-    // 제3자 거래는 부당행위계산 부인 적용 안 됨
-    if(buyerType === 'third'){
-      unfairBox.className='gift-warn-box';
-      unfairBox.innerHTML='';
-    } else if(saleamt > 0){
-      const saleDiff = market - saleamt;
-      if(saleDiff >= unfairThreshold){
-        unfairApplied = true;
+    if(buyerType==='third'){
+      unfairBox.className='gift-warn-box';unfairBox.innerHTML='';
+    } else if(saleamt>0){
+      const saleDiff=market-saleamt;
+      const unfairHit=saleDiff>0&&(saleDiff>=unfair5pct||saleDiff>=unfair3bil);
+      if(unfairHit){
+        unfairApplied=true;
+        const hStr=(saleDiff>=unfair5pct&&saleDiff>=unfair3bil)
+          ?'시가x5%('+wan(unfair5pct)+') 이상 AND 3억 이상'
+          :(saleDiff>=unfair5pct?'시가x5%('+wan(unfair5pct)+') 이상':'3억 이상');
         unfairBox.className='gift-warn-box gift-warn-danger show';
-        unfairBox.innerHTML='<b>⚠ 부당행위계산 부인 적용 (소득세법 §101)</b><br>'
-          +'시가('+wan(market)+') − 양도가('+wan(saleamt)+') = <b>'+wan(saleDiff)+'</b><br>'
-          +'기준 MIN(시가×5%, 3억) = '+wan(unfairThreshold)+'<br>'
+        unfairBox.innerHTML='<b>! 부당행위계산 부인 적용 (소득세법 101)</b><br>'
+          +'차액('+wan(saleDiff)+'): '+hStr+' -> 충족<br>'
           +'<b>양도세를 시가('+wan(market)+') 기준으로 재산정합니다</b><br>'
-          +'<span style="opacity:.8;font-size:10px">특수관계인(직계존비속) 간 저가양도 시 적용 (소득세법 §101)</span>';
-      } else if(saleDiff > 0 && saleDiff < unfairThreshold){
+          +'<span style="opacity:.8;font-size:10px">특수관계인 저가양도 - 양도자 양도세 시가 기준</span>';
+      } else if(saleDiff>0){
         unfairBox.className='gift-warn-box gift-warn-notice show';
-        unfairBox.innerHTML='✅ 부당행위계산 부인 해당 없음 — 차액('+wan(saleDiff)+')이 기준('+wan(unfairThreshold)+') 이하<br>'
-          +'<span style="opacity:.8;font-size:10px">특수관계인 간 거래이나 기준 이하</span>';
-      } else {
-        unfairBox.className='gift-warn-box';
-        unfairBox.innerHTML='';
-      }
-    } else {
-      unfairBox.className='gift-warn-box';
-      unfairBox.innerHTML='';
-    }
+        unfairBox.innerHTML='부당행위계산 부인 해당 없음: '
+          +'차액('+wan(saleDiff)+')이 시가x5%('+wan(unfair5pct)+') 미만 AND 3억 미만';
+      } else {unfairBox.className='gift-warn-box';unfairBox.innerHTML='';}
+    } else {unfairBox.className='gift-warn-box';unfairBox.innerHTML='';}
   }
 
   // ── 증여세 ──
@@ -2041,60 +2056,58 @@ function runGift(){
   const stdOver3 = std >= 30000;
 
   // 무상취득(증여) 세율 — 수증자 주택수 기준
+  // 유상취득세 계산 (가격 반영: 6억이하 1%, 6~9억 비례, 9억초과 3%)
+  function calcPaidAcqTax(price, buyerH, isAdjLocal){
+    if(isAdjLocal && (buyerH==='multi2')) return Math.round(price*0.08);
+    if(buyerH==='multi3') return Math.round(price*0.08);
+    if(buyerH==='multi4'||(isAdjLocal&&(buyerH==='multi3'||buyerH==='multi4'))) return Math.round(price*0.12);
+    // 1주택 기준 취득세
+    if(price<=60000) return Math.round(price*0.01);
+    if(price>=90000) return Math.round(price*0.03);
+    const rate=(price/10000*2/3-3)/100;
+    return Math.round(price*rate);
+  }
   function calcGiftAcqRate(granteeH){
     // 조정+공시3억↑+수증자 다주택 → 12%
     if(isAdj && stdOver3 && (granteeH==='multi2'||granteeH==='multi3')) return 0.12;
     return 0.035; // 기본 3.5%
   }
   // 유상취득 세율 — 매수자/채무인수자 주택수 기준
-  // 유상취득세 계산 (가격 반영)
-  function calcPaidAcqTax(price, buyerH, isAdj){
-    // 다주택 중과
-    if(isAdj && (buyerH==='multi2')) return Math.round(price*0.08);
-    if((isAdj&&(buyerH==='multi3'||buyerH==='multi4'))||(buyerH==='multi3'||buyerH==='multi4'))
-      return buyerH==='multi3'?Math.round(price*0.08):Math.round(price*0.12);
-    // 1주택 기준 취득세: 가격구간별
-    // 6억(60000만)이하: 1%, 9억(90000만)초과: 3%
-    // 6~9억: 세율 = (취득가액×2/3 - 3) × 1/100  (지방세법 §11①8호)
-    if(price <= 60000) return Math.round(price*0.01);
-    if(price >= 90000) return Math.round(price*0.03);
-    // 비례세율: rate = (price/10000 * 2/3 - 3) / 100
-    const rate = (price/10000 * 2/3 - 3) / 100;
-    return Math.round(price * rate);
-  }
   function calcPaidAcqRate(buyerH, isAdj){
-    // 단순 세율 반환 (가격 모를 때 사용)
-    if(isAdj && buyerH==='multi2') return 0.08;
-    if(buyerH==='multi3') return 0.08;
-    if(buyerH==='multi4') return 0.12;
-    if(isAdj &&(buyerH==='multi3'||buyerH==='multi4')) return 0.12;
-    return 0.03; // 단순 기준값
+    if(!isAdj){
+      // 비조정: 무주택·1주택·2주택 1~3%, 3주택 8%, 4주택↑ 12%
+      if(buyerH==='multi3') return 0.08; // 3주택
+      if(buyerH==='multi4') return 0.12; // 4주택↑
+      return 0.03;
+    }
+    // 조정: 2주택 8%, 3주택↑ 12%
+    if(buyerH==='multi2') return 0.08;
+    if(buyerH==='multi3'||buyerH==='multi4') return 0.12;
+    return 0.03;
   }
 
   const giftAcqRate = calcGiftAcqRate(granteeHouse);
   const paidAcqRate = calcPaidAcqRate(granteeHouse, isAdj); // 채무인수분은 수증자 기준
-  const saleAcqRate = buyerType==='third' ? 0 : calcPaidAcqRate(buyerHouse, isAdj); // 단순 세율 (표시용) // 제3자면 합계 미포함
+  const saleAcqRate = buyerType==='third' ? 0 : calcPaidAcqRate(buyerHouse, isAdj); // 제3자면 합계 미포함
 
   let acqTaxGift, acqTaxPaid, acqTaxTotal, acqTaxNote;
   if(type==='pure'){
     // 순수증여: 보증금도 수증자 인수 시 공제
     const pureGiftPart = Math.max(0, market - tenant);
     acqTaxGift = Math.round(pureGiftPart * giftAcqRate);
-    acqTaxPaid = tenant>0 ? calcPaidAcqTax(tenant, granteeHouse, isAdj) : 0;
+    acqTaxPaid = tenant>0 ? Math.round(tenant * paidAcqRate) : 0;
     acqTaxTotal = acqTaxGift + acqTaxPaid;
-    const _paidRateStr=(calcPaidAcqTax(tenant,granteeHouse,isAdj)/Math.max(1,tenant)*100).toFixed(2);
     acqTaxNote = tenant>0
-      ? '무상분('+wan(pureGiftPart)+')×'+(giftAcqRate*100).toFixed(0)+'% + 보증금('+wan(tenant)+')×'+_paidRateStr+'%'
+      ? '무상분('+wan(pureGiftPart)+')×'+(giftAcqRate*100).toFixed(0)+'% + 보증금('+wan(tenant)+')×'+(paidAcqRate*100).toFixed(0)+'%'
       : '순수 증여 취득세율 '+(giftAcqRate*100).toFixed(0)+'%';
   } else {
     // 부담부: 채무+보증금=유상, 나머지=무상
     const totalDebt = debt + tenant;
     const giftPart = Math.max(0, market - totalDebt);
     acqTaxGift = Math.round(giftPart * giftAcqRate);
-    acqTaxPaid = calcPaidAcqTax(totalDebt, granteeHouse, isAdj);
+    acqTaxPaid = Math.round(totalDebt * paidAcqRate);
     acqTaxTotal = acqTaxGift + acqTaxPaid;
-    const _debtRateStr=(acqTaxPaid/Math.max(1,totalDebt)*100).toFixed(2);
-    acqTaxNote = '무상분('+wan(giftPart)+')×'+(giftAcqRate*100).toFixed(0)+'% + 유상분(채무'+wan(debt)+(tenant>0?'+보증금'+wan(tenant):'')+')×'+_debtRateStr+'%';
+    acqTaxNote = '무상분('+wan(giftPart)+')×'+(giftAcqRate*100).toFixed(0)+'% + 유상분(채무'+wan(debt)+(tenant>0?'+보증금'+wan(tenant):'')+')×'+(paidAcqRate*100).toFixed(0)+'%';
   }
 
   const totalTax = gft.tax + (trans?trans.total:0) + acqTaxTotal;
@@ -2109,7 +2122,7 @@ function runGift(){
   $('gf-summary').innerHTML = '시가 <b>'+wan(market)+'</b>'+tenantStr+giftPriceStr+salePriceStr+' / 취득가액 <b>'+wan(cost)+'</b> / 보유 <b>'+hold+'년</b> 거주 <b>'+live+'년</b>';
 
   // ── 3가지 방법 비교 패널 ──
-  const cmp = calcAllThree(market, std, cost, debt, tenant, hold, live, rel, prior, htype, isAdj, assettype, saleamt, granteeHouse, buyerType, buyerHouse, isAdj, giftPrice, unfairApplied);
+  const cmp = calcAllThree(market, std, cost, debt, tenant, hold, live, rel, prior, htype, isAdj, assettype, saleamt, granteeHouse, buyerType, buyerHouse, isAdj, giftPrice, unfairApplied, wedding, skipGen);
   $('gf-compare').innerHTML = renderCompare(cmp, type);
 
   // 다주택 중과 유예 안내 배너
@@ -2138,7 +2151,7 @@ function runGift(){
   // 부당행위계산부인 적용 시 양도가액을 시가로 대체
   const salePrice = (unfairApplied) ? market : (saleamt > 0 ? saleamt : market);
   const saleTrans = calcTransferTax(market, cost, salePrice, hold, live, htype, assettype);
-  const saleAcqPaid = buyerType==='third' ? 0 : calcPaidAcqTax(salePrice, buyerHouse, isAdj);
+  const saleAcqPaid = Math.round(salePrice * saleAcqRate);
 
   function colWrap(icon, title, isBest, content){
     const border = isBest ? '1px solid var(--green)' : '1px solid var(--border2)';
@@ -2177,7 +2190,7 @@ function runGift(){
   const buyerHouseLabel={'none':'무주택','one':'1주택','multi2':'2주택','multi3':'3주택↑'};
   const pureHint = hint('공제: 배우자 6억 / 직계존비속 5천만 / 미성년 2천만 / 기타친족 1천만<br>'
     +'수증자 주택: <b>'+(granteeHouseLabel[granteeHouse]||'-')+'</b> → 취득세율 '+(giftAcqRate*100).toFixed(0)+'%'
-    +(isAdj&&stdOver3&&(granteeHouse==='multi2'||granteeHouse==='multi3')?' <b style="color:var(--amber)">(조정+공시3억↑→12%)</b>':''));
+    +(isAdj&&stdOver3&&(granteeHouse==='multi2'||granteeHouse==='multi3')?' (조정+공시3억 12%)':''));
 
   // ── B: 부담부 증여 ──
   const burdenGiftBase = Math.max(0, market - debt - tenant);
@@ -2215,9 +2228,10 @@ function runGift(){
 
   // 저가양도 판단 (상증세법 §35) — 특수관계인(직계존비속) 간 거래에만 적용
   const isRelatedBuyer = (buyerType !== 'third');
-  const saleDiffAmt = salePrice > 0 ? Math.max(0, market - salePrice) : 0;
-  const saleDeemedGift = isRelatedBuyer && saleDiffAmt >= diffLimit
-    ? Math.max(0, saleDiffAmt - diffLimit) : 0;
+  const saleDiffAmt=salePrice>0?Math.max(0,market-salePrice):0;
+  const _saleDiff30=Math.round(market*0.30);
+  const _saleLowHit=isRelatedBuyer&&saleDiffAmt>0&&(saleDiffAmt>=_saleDiff30||saleDiffAmt>=30000);
+  const saleDeemedGift=_saleLowHit?Math.max(0,saleDiffAmt-Math.min(_saleDiff30,30000)):0;
   // 의제증여세: 매수인이 싸게 산 이익에 대해 납부
   const saleDeemedGiftTax = saleDeemedGift > 0
     ? Math.round(calcGiftTax(saleDeemedGift, rel, prior, wedding, skipGen).tax) : 0;
@@ -2272,15 +2286,15 @@ function runGift(){
   const minTot = Math.min(...totals3);
 
   // ── 저가양도 안내 (공통) ──
-  const lowPriceGuide = transfer > 0
-    ? '<div class="chart-wrap" style="padding:12px;margin-top:8px">'
-      +'<div class="chart-title">📌 저가양도 기준 (상증세법 §35)</div>'
+  const lowPriceGuide=transfer>0
+    ?'<div class="chart-wrap" style="padding:12px;margin-top:8px">'
+      +'<div class="chart-title">저가양도/부당행위계산부인 기준</div>'
       +'<div style="font-size:10px;line-height:1.9;color:var(--text2)">'
-      +'기준차액 = MIN(시가×30%, 3억) = <b>'+wan(diffLimit)+'</b><br>'
-      +'저가양도 해당 없으려면 양도가 &gt; <b>'+wan(Math.round(lowPriceThreshold))+'</b><br>'
-      +'초과 시 의제 증여액 = 시가 − 양도가 − 기준차액 → 수증자 증여세 추가 과세'
+      +'특수관계인 저가양도: 차액 >= 시가x30%('+wan(diff30pct)+') OR 3억 -> 의제증여세(매수자)<br>'
+      +'비특수관계인: 차액 >= 시가x30%('+wan(diff30pct)+') -> 3억 공제 후 의제증여세<br>'
+      +'부당행위계산부인: 차액 >= 시가x5%('+wan(unfair5pct)+') OR 3억 -> 양도세 시가 기준(특수관계인만)'
       +'</div></div>'
-    : '';
+    :'';
 
   const detail3col = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px">'
     + colWrap('🎁','순수 증여', cmp.pure.total===minTot, pureGiftTable+pureHint)
