@@ -1736,8 +1736,8 @@ function renderCompare(cmp, type){
     {key:'sale',   label:'일반 양도',    icon:'🏷️', r:cmp.sale},
   ];
   const totals = methods.map(m=>m.r.total);
-  const minVal = Math.min(...totals);
-  const maxVal = Math.max(...totals);
+  const minVal = Math.min.apply(null, totals);
+  const maxVal = Math.max.apply(null, totals);
 
   const cards = methods.map(m=>{
     const isBest  = m.r.total===minVal;
@@ -2220,16 +2220,6 @@ function runGift(){
       'ℹ 비조정대상지역 다주택: 중과 미적용, 일반세율 적용</div>';
   }
 
-  // KPI 카드
-  const kpiItems = [
-    {label:'증여세 (수증자)', val:wan(Math.round(gft.tax)), color:'var(--amber)'},
-    {label:'취득세 (수증자)', val:wan(acqTaxTotal), color:'var(--blue)'},
-    ...(trans?[
-      {label:'양도세 (증여자)', val:wan(Math.round(trans.tax)), color:'var(--red)'},
-      {label:'지방소득세', val:wan(Math.round(trans.localTax)), color:'var(--purple)'},
-    ]:[]),
-    {label:'총 세금 합계', val:wan(Math.round(totalTax)), color:'var(--teal)'},
-  ];
   // (상세 3열에 세금 내역 포함되므로 별도 KPI 카드 제거)
 
   // ── 상세 패널: 3열 그리드 (비교카드 바로 아래) ──
@@ -2258,20 +2248,22 @@ function runGift(){
     return '<div class="info-hint" style="margin-top:6px;font-size:10px">'+txt+'</div>';
   }
 
-  const pureGiftTable = detailTable([
+  const _pureGiftCalc = calcGiftTax(Math.max(0,market-tenant),rel,prior,wedding,skipGen);
+  const pureGiftRows = [
     ['시가 (과세 기준)', wan(market)],
     ['임차보증금 공제', tenant>0 ? '− '+wan(tenant) : '—'],
     ['증여재산공제', '− '+wan(gft.deduct), 't-pos'],
     ['10년 내 기증여', prior>0 ? '+ '+wan(prior) : '0만'],
-    ...(wedding>0?[['혼인·출산 추가공제', '− '+wan(Math.min(wedding,10000)), 't-pos']]:[]),
-    ['과세표준', wan(calcGiftTax(Math.max(0,market-tenant),rel,prior,wedding,skipGen).taxable), 'fw-bold'],
-    ...(skipGen?[['세대생략 할증 30%', '+ '+wan(Math.round(calcGiftTax(Math.max(0,market-tenant),rel,prior,wedding,skipGen).skipSurcharge)), 't-neg']]:[]),
-    ['신고세액공제 (3%)', '− '+wan(calcGiftTax(Math.max(0,market-tenant),rel,prior,wedding,skipGen).reportDeduct), 't-pos'],
-    ['증여세 (신고공제 후)', wan(Math.round(calcGiftTax(Math.max(0,market-tenant),rel,prior,wedding,skipGen).tax)), 't-neg fw-bold'],
-    ['취득세', wan(Math.round(Math.max(0,market-tenant)*giftAcqRate)), 't-neg'],
-    ['─────', '─────'],
-    ['합계', wan(cmp.pure.total), 't-neg fw-bold'],
-  ]);
+  ];
+  if(wedding>0) pureGiftRows.push(['혼인·출산 추가공제', '− '+wan(Math.min(wedding,10000)), 't-pos']);
+  pureGiftRows.push(['과세표준', wan(_pureGiftCalc.taxable), 'fw-bold']);
+  if(skipGen) pureGiftRows.push(['세대생략 할증 30%', '+ '+wan(Math.round(_pureGiftCalc.skipSurcharge)), 't-neg']);
+  pureGiftRows.push(['신고세액공제 (3%)', '− '+wan(_pureGiftCalc.reportDeduct), 't-pos']);
+  pureGiftRows.push(['증여세 (신고공제 후)', wan(Math.round(_pureGiftCalc.tax)), 't-neg fw-bold']);
+  pureGiftRows.push(['취득세', wan(Math.round(Math.max(0,market-tenant)*giftAcqRate)), 't-neg']);
+  pureGiftRows.push(['─────', '─────']);
+  pureGiftRows.push(['합계', wan(cmp.pure.total), 't-neg fw-bold']);
+  const pureGiftTable = detailTable(pureGiftRows);
   const granteeHouseLabel={'none':'무주택','one':'1주택','multi2':'2주택','multi3':'3주택↑'};
   const buyerHouseLabel={'none':'무주택','one':'1주택','multi2':'2주택','multi3':'3주택↑'};
   const pureHint = hint('공제: 배우자 6억 / 직계존비속 5천만 / 미성년 2천만 / 기타친족 1천만<br>'
@@ -2362,7 +2354,7 @@ function runGift(){
   const _saleAcqInfo = buyerType==='third'
     ? '제3자 매수 → 취득세 합계 미포함 (매수자 별도 부담)'
     : '매수인('+buyerHouseLabel[buyerHouse]+') 유상취득세 '+(saleAcqRate*100).toFixed(0)+'%';
-  const _liveWarning = (is1House && !saleTrans.isMultiHouse && live < 2 && hold >= 3)
+  const _liveWarning = (htype==='one' && !saleTrans.isMultiHouse && live < 2 && hold >= 3)
     ? '<br><b style="color:var(--amber)">⚠ 거주요건 미충족 (거주 '+live+'년 < 2년) → 고율공제(80%) 불가, 일반공제(보유×2%) 적용</b>'
     : '';
   const _deemedInfo = saleDeemedGiftTax > 0
@@ -2376,7 +2368,7 @@ function runGift(){
 
   // 비교카드 totals: 일반양도는 의제증여세 포함 금액으로
   const totals3 = [cmp.pure.total, cmp.burden.total, saleTotalWithDeemed];
-  const minTot = Math.min(...totals3);
+  const minTot = Math.min.apply(null, totals3);
 
   // ── 저가양도 안내 (공통) ──
   const lowPriceGuide=transfer>0
@@ -2400,7 +2392,7 @@ function runGift(){
     +'</div>'
     + lowPriceGuide;
 
-  $('gf-detail').innerHTML = detail3col;
+  $('gf-detail').innerHTML = surchargeNotice + detail3col;
 }
 
 
