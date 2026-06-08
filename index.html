@@ -694,6 +694,7 @@ function addGoalCard(preset={}){
 
 function removeGoalCard(id){
   goalCards=goalCards.filter(c=>c.id!==id);
+  renderedPanels.delete(id);
   renderGoalCardsList();
   _autoGoals();
 }
@@ -716,11 +717,12 @@ function renderGoalCardsList(){
     }).join('');
     // 조기 은퇴 준비금: 입력 불가, 안내만 표시
     if(card.type==='retire'){
-      out+='<div class="goal-card open" id="gcb-'+cid+'">'
+      var rcid=card.id;
+      out+='<div class="goal-card open" id="gcb-'+rcid+'">'
         +'<div class="goal-card-header">'
         +'<span style="font-size:16px">🏖️</span>'
         +'<span class="goal-card-title">'+card.name+'</span>'
-        +'<button class="gc-del" onclick="removeGoalCard('+cid+')">×</button>'
+        +'<button class="btn-sm btn-danger" style="padding:2px 8px;font-size:10px;margin-left:6px" onclick="event.stopPropagation();removeGoalCard('+rcid+')">✕</button>'
         +'</div>'
         +'<div class="goal-card-body" style="display:block;padding:16px;text-align:center;line-height:1.8">'
         +'<div style="font-size:12px;color:var(--text2);margin-bottom:12px">은퇴 후 필요 자금은 물가·수익률·기대수명·생활비 등<br>복합적인 변수를 함께 고려해야 합니다.</div>'
@@ -970,7 +972,6 @@ function runAllGoals(){
 
   $('goals-empty').style.display='none';
   $('goals-content').style.display='block';
-  setTimeout(renderFirstGoalChart, 50);
   updateFutureIncome();
 }
 
@@ -1008,16 +1009,19 @@ function renderGoalsTimeline(){
 }
 
 function renderGoalDetailTabs(){
+  renderedPanels.clear();
   const tabs=$('goal-result-tabs');
   const panels=$('goal-result-panels');
   tabs.innerHTML=goalCards.filter(c=>c.result).map((c,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="switchGoalTab(${c.id},this)">${GOAL_TYPES[c.type].icon} ${c.name}</button>`).join('');
   panels.innerHTML=goalCards.filter(c=>c.result).map((c,i)=>`<div id="gp-${c.id}" class="panel ${i===0?'active':''}">${buildGoalPanel(c)}</div>`).join('');
+  setTimeout(renderFirstGoalChart, 50);
 }
 
 function switchGoalTab(id,btn){
   goalCards.filter(c=>c.result).forEach(c=>$('gp-'+c.id)&&$('gp-'+c.id).classList.remove('active'));
   btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   $('gp-'+id).classList.add('active');btn.classList.add('active');
+  renderedPanels.delete(id);
   renderGoalPanelChart(id);
 }
 
