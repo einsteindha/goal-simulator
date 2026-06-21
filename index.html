@@ -104,7 +104,7 @@ select option{background:#1e2130}
 .panel{display:none}.panel.active{display:block}
 .chart-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:12px}
 .chart-title{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px}
-.chart-canvas{width:100%!important;max-height:1400px}
+.chart-canvas{width:100%!important;max-height:933px}
 .result-msg{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:12px;font-size:12px;line-height:1.9;color:var(--text2)}
 .result-msg b{color:var(--text)}
 .data-table{width:100%;border-collapse:collapse;font-size:11px}
@@ -265,7 +265,7 @@ select option{background:#1e2130}
     <div id="goals-dash" class="dash-grid"></div>
     <div class="chart-wrap">
       <div class="chart-title">목적자금 타임라인 — 전체 자산 경로</div>
-      <canvas id="chart-timeline" class="chart-canvas" height="700"></canvas>
+      <canvas id="chart-timeline" class="chart-canvas" height="467"></canvas>
     </div>
     <div id="goal-result-tabs" class="tabs"></div>
     <div id="goal-result-panels"></div>
@@ -1056,7 +1056,7 @@ function buildGoalPanel(card){
       +(loanEst>0?' / 예상 필요 대출: <b style="color:var(--red)">'+wan(loanEst)+'</b>':' <span style="color:var(--green)">✓ 대출 불필요</span>')+'<br>'
       +'MC 중앙값: '+wan(mc.pct(50))+' / MC 하위10%(보수적) 대출 필요: <b style="color:var(--amber)">'+wan(loanMC)+'</b>'
       +'</div>'
-      +'<div class="chart-wrap"><canvas id="gc-chart-'+card.id+'" class="chart-canvas" height="650"></canvas></div>';
+      +'<div class="chart-wrap"><canvas id="gc-chart-'+card.id+'" class="chart-canvas" height="433"></canvas></div>';
   }
   const verdictText=det.achieved?'✓ 달성':'✗ '+wan(Math.abs(det.surplus))+' 부족';
   return '<div class="result-msg">'
@@ -1064,7 +1064,7 @@ function buildGoalPanel(card){
     +'최종 예상: <b>'+wan(det.finalAsset)+'</b> <span style="'+c+';font-weight:700">'+verdictText+'</span> &nbsp;|&nbsp; 필요 월적립: <b style="color:var(--amber)">'+wan(det.neededMonthly)+'/월</b><br>'
     +'MC 성공률: <b style="color:'+mcc+'">'+mc.successRate.toFixed(1)+'%</b> &nbsp; MC중앙값: '+wan(mc.pct(50))+' &nbsp; MC하위10%: '+wan(mc.pct(10))
     +'</div>'
-    +'<div class="chart-wrap"><canvas id="gc-chart-'+card.id+'" class="chart-canvas" height="650"></canvas></div>';
+    +'<div class="chart-wrap"><canvas id="gc-chart-'+card.id+'" class="chart-canvas" height="433"></canvas></div>';
 }
 
 const renderedPanels=new Set();
