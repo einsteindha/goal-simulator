@@ -771,12 +771,12 @@ function renderGoalCardsList(){
           +'<div style="margin-top:6px"><label>월 적립 (만원)</label>'+cardSlider(cid,'monthly',card.monthly,10,10000,50,'만')+'</div>')
       +(card.type==='housing'
         ? '<div style="margin-top:8px"><label>기대 연 수익률 (%)</label>'+cardSlider(cid,'nomRet',card.nomRet,0,20,0.5,'%')+'</div>'
-          +'<div style="margin-top:6px"><label>표준편차 — MC변동성 (%)</label>'+cardSlider(cid,'stdDev',card.stdDev,1,30,0.5,'%')+'</div>'
-          +'<div style="margin-top:3px;font-size:10px;color:var(--text3)">백테스트 또는 CFP 상담으로 도출하세요</div>'
+          +'<div style="margin-top:6px"><label>표준편차 — MC변동성 (%)</label>'+cardSlider(cid,'stdDev',card.stdDev,0,30,0.5,'%')+'</div>'
+          +'<div style="margin-top:3px;font-size:10px;color:var(--text3)">무위험자산(예금·국채 등)은 0 입력 · 그 외는 백테스트 또는 CFP 상담으로 도출</div>'
           +'<div style="margin-top:8px"><label>부동산 연 가격상승률 (%)</label>'+cardSlider(cid,'priceRise',card.priceRise||3,0,15,0.5,'%')+'</div>'
         : '<div style="margin-top:8px"><label>기대 연 수익률 (%)</label>'+cardSlider(cid,'nomRet',card.nomRet,0,20,0.5,'%')+'</div>'
-          +'<div style="margin-top:6px"><label>표준편차 — MC변동성 (%)</label>'+cardSlider(cid,'stdDev',card.stdDev,1,30,0.5,'%')+'</div>'
-          +'<div style="margin-top:3px;font-size:10px;color:var(--text3)">백테스트 또는 CFP 상담으로 도출하세요</div>'
+          +'<div style="margin-top:6px"><label>표준편차 — MC변동성 (%)</label>'+cardSlider(cid,'stdDev',card.stdDev,0,30,0.5,'%')+'</div>'
+          +'<div style="margin-top:3px;font-size:10px;color:var(--text3)">무위험자산(예금·국채 등)은 0 입력 · 그 외는 백테스트 또는 CFP 상담으로 도출</div>'
           +'<div style="margin-top:8px"><label>연 물가상승률 (%)</label>'+cardSlider(cid,'inflation',card.inflation,0,10,0.5,'%')+'</div>')
       +(card.type==='housing'
         ? '<div id="re-panel-'+cid+'" style="margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px"><!-- lazy --></div>'
