@@ -773,7 +773,7 @@ function renderGoalCardsList(){
           +'<div style="margin-top:6px"><label>현재 보유 (만원)</label>'+cardSlider(cid,'initAsset',card.initAsset,0,500000,1000,'만')+'</div>'
           +'<div style="margin-top:6px"><label>월 적립 (만원)</label>'+cardSlider(cid,'monthly',card.monthly,10,10000,50,'만')+'</div>')
       +'<div style="margin-top:6px;display:flex;align-items:center;gap:8px">'
-        +'<label style="margin:0;flex:1">월적립 연 증액</label>'
+        +'<label style="margin:0">증액저축</label>'
         +'<button onclick="toggleMonthlyGrowth('+cid+')" style="padding:3px 14px;font-size:11px;border:1px solid '+(card.monthlyGrowth?'var(--accent)':'var(--border2)')+';border-radius:5px;background:'+(card.monthlyGrowth?'var(--accent)':'transparent')+';color:'+(card.monthlyGrowth?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">'+(card.monthlyGrowth?'ON':'OFF')+'</button>'
       +'</div>'
       +(card.monthlyGrowth?'<div style="margin-top:4px"><label>연 증액률 (%)</label>'+cardSlider(cid,'monthlyGrowthRate',card.monthlyGrowthRate||2,0,15,0.5,'%')+'</div>':'')
@@ -2424,7 +2424,7 @@ initSliders();updateReal();
 // 기본 목적자금 카드 2개
 updateFutureIncome();
 addGoalCard({type:'general',name:'목적자금',amount:3000,years:5,initAsset:500,monthly:30,nomRet:5,inflation:2.5,stdDev:8});
-addGoalCard({type:'housing',name:'주택 구입',housePrice:80000,amount:80000,years:7,initAsset:3000,monthly:150,nomRet:4,inflation:3,stdDev:7,priceRise:3});
+addGoalCard({type:'housing',name:'주택 구입',housePrice:80000,amount:80000,years:15,initAsset:3000,monthly:150,nomRet:4,inflation:3,stdDev:7,priceRise:3});
 // 초기 자동 실행
 setTimeout(function(){
   runAllGoals();
