@@ -34,7 +34,7 @@ html,body{height:100%;overflow:hidden;font-family:'Noto Sans KR',sans-serif;back
 /* PAGES */
 .page{display:none;height:calc(100vh - 92px)}
 .page.active{display:flex}
-.split-left{width:360px;flex-shrink:0;overflow-y:auto;background:var(--bg2);border-right:1px solid var(--border);padding:14px}
+.split-left{width:clamp(360px,40%,720px);flex-shrink:0;overflow-y:auto;background:var(--bg2);border-right:1px solid var(--border);padding:14px}
 .split-right{flex:1;overflow-y:auto;background:var(--bg);padding:14px}
 
 ::-webkit-scrollbar{width:4px}
