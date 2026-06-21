@@ -673,6 +673,8 @@ function addGoalCard(preset={}){
     nomRet:preset.nomRet!==undefined?preset.nomRet:6,
     inflation:preset.inflation!==undefined?preset.inflation:2.5,
     stdDev:preset.stdDev!==undefined?preset.stdDev:10,
+    monthlyGrowth:preset.monthlyGrowth||false,
+    monthlyGrowthRate:preset.monthlyGrowthRate!==undefined?preset.monthlyGrowthRate:2,
     color:PALETTE[(id-1)%PALETTE.length],
     result:null,
   };
@@ -769,6 +771,11 @@ function renderGoalCardsList(){
           +'<div style="margin-top:6px"><label>목표 기간 (년)</label>'+cardSlider(cid,'years',card.years,1,100,1,'년')+'</div>'
           +'<div style="margin-top:6px"><label>현재 보유 (만원)</label>'+cardSlider(cid,'initAsset',card.initAsset,0,500000,1000,'만')+'</div>'
           +'<div style="margin-top:6px"><label>월 적립 (만원)</label>'+cardSlider(cid,'monthly',card.monthly,10,10000,50,'만')+'</div>')
+      +'<div style="margin-top:6px;display:flex;align-items:center;gap:8px">'
+        +'<label style="margin:0;flex:1">월적립 연 증액</label>'
+        +'<button onclick="toggleMonthlyGrowth('+cid+')" style="padding:3px 14px;font-size:11px;border:1px solid '+(card.monthlyGrowth?'var(--accent)':'var(--border2)')+';border-radius:5px;background:'+(card.monthlyGrowth?'var(--accent)':'transparent')+';color:'+(card.monthlyGrowth?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">'+(card.monthlyGrowth?'ON':'OFF')+'</button>'
+      +'</div>'
+      +(card.monthlyGrowth?'<div style="margin-top:4px"><label>연 증액률 (%)</label>'+cardSlider(cid,'monthlyGrowthRate',card.monthlyGrowthRate||2,0,15,0.5,'%')+'</div>':'')
       +(card.type==='housing'
         ? '<div style="margin-top:8px"><label>기대 연 수익률 (%)</label>'+cardSlider(cid,'nomRet',card.nomRet,0,20,0.5,'%')+'</div>'
           +'<div style="margin-top:6px"><label>표준편차 — MC변동성 (%)</label>'+cardSlider(cid,'stdDev',card.stdDev,0,30,0.5,'%')+'</div>'
@@ -871,6 +878,13 @@ function updateCard(id,key,val){
   }
   if(key==='housePrice')card.amount=val;
 }
+function toggleMonthlyGrowth(cid){
+  var card=goalCards.find(function(c){return c.id===cid;});
+  if(!card)return;
+  card.monthlyGrowth=!card.monthlyGrowth;
+  renderGoalCardsList();
+  _autoGoals();
+}
 
 // ══ CALC ══
 function calcDet(initAsset,monthly,years,nomRet,inflation,goalNow,incomeGrowth){
@@ -924,7 +938,6 @@ let lastHousingEquity=null;
 
 function runAllGoals(){
   if(goalCards.length===0){alert('목적자금을 먼저 추가하세요');return;}
-  const incomeGrowth=parseFloat($('g-income-growth').value)/100;
   const runs=3000;
 
   goalCards.forEach(function(card){
@@ -932,17 +945,18 @@ function runAllGoals(){
     const cardRet=(card.nomRet||6)/100;
     const cardInf=(card.inflation||2.5)/100;
     const cardStd=(card.stdDev||10)/100;
+    const cardGrowth=card.monthlyGrowth?(card.monthlyGrowthRate||2)/100:0;
     var det,mc;
     if(card.type==='housing'){
       const hp=card.housePrice||card.amount||80000;
       const pr=(card.priceRise||3)/100;
       const futureHP=Math.round(hp*Math.pow(1+pr,card.years)/100)*100;
-      det=calcDet(card.initAsset,card.monthly,card.years,cardRet,0,futureHP,incomeGrowth);
-      mc=calcMC(card.initAsset,card.monthly,card.years,cardRet,0,futureHP,cardStd,runs,incomeGrowth);
+      det=calcDet(card.initAsset,card.monthly,card.years,cardRet,0,futureHP,cardGrowth);
+      mc=calcMC(card.initAsset,card.monthly,card.years,cardRet,0,futureHP,cardStd,runs,cardGrowth);
       lastHousingEquity={det,mc,years:card.years,housePrice:futureHP,housePriceNow:hp};
     } else {
-      det=calcDet(card.initAsset,card.monthly,card.years,cardRet,cardInf,card.amount,incomeGrowth);
-      mc=calcMC(card.initAsset,card.monthly,card.years,cardRet,cardInf,card.amount,cardStd,runs,incomeGrowth);
+      det=calcDet(card.initAsset,card.monthly,card.years,cardRet,cardInf,card.amount,cardGrowth);
+      mc=calcMC(card.initAsset,card.monthly,card.years,cardRet,cardInf,card.amount,cardStd,runs,cardGrowth);
     }
     card.result={det,mc};
   });
@@ -1502,31 +1516,33 @@ function cardSlider(cid, key, val, min, max, step, unit){
   var nid='cn-'+cid+'-'+key;
   var pvid='cp-'+cid+'-'+key;
   var pct=((val-min)/(max-min)*100).toFixed(1);
-  var showPreview=(unit==='만');
-  var suffixHtml=showPreview
-    ? '<span style="font-size:11px;color:var(--text3);min-width:14px">만</span>'
-      +'<span id="'+pvid+'" class="cs-preview">'+csPreviewText(val)+'</span>'
-    : '<span style="font-size:11px;color:var(--text3);min-width:14px">'+unit+'</span>';
+  var suffixHtml='<span style="font-size:11px;color:var(--text3);min-width:14px">'+unit+'</span>'
+    +'<span id="'+pvid+'" class="cs-preview">'+csPreviewText(val,unit)+'</span>';
   return '<div class="card-slider-row">'
     +'<input type="range" id="'+sid+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'"'
     +' style="--pct:'+pct+'%"'
     +' data-nid="'+nid+'" data-cid="'+cid+'" data-key="'+key+'"'
-    +' data-pvid="'+pvid+'" data-showpv="'+(showPreview?'1':'0')+'"'
+    +' data-pvid="'+pvid+'" data-showpv="1" data-unit="'+unit+'"'
     +' oninput="syncCardSlider(this)">'
     +'<input type="number" id="'+nid+'" value="'+val+'" min="'+min+'" max="'+max+'" step="'+step+'"'
     +' style="width:72px;padding:3px 6px;text-align:right;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;font-family:monospace"'
     +' data-sid="'+sid+'" data-cid="'+cid+'" data-key="'+key+'"'
-    +' data-pvid="'+pvid+'" data-showpv="'+(showPreview?'1':'0')+'"'
+    +' data-pvid="'+pvid+'" data-showpv="1" data-unit="'+unit+'"'
     +' oninput="syncCardNumber(this)" onblur="syncCardNumberBlur(this)">'
     +suffixHtml
     +'</div>';
 }
-function csPreviewText(v){
+function csPreviewText(v,unit){
   v=parseFloat(v)||0;
-  if(v===0) return '';
-  if(v>=100000000) return (v/100000000).toFixed(2)+'조';
-  if(v>=10000) return (v/10000).toFixed(v%10000===0?0:1)+'억';
-  return v+'만';
+  if(unit==='만'){
+    if(v===0) return '';
+    if(v>=100000000) return (v/100000000).toFixed(2)+'조';
+    if(v>=10000) return (v/10000).toFixed(v%10000===0?0:1)+'억';
+    return v+'만';
+  }
+  if(unit==='%') return v.toFixed(1)+'%';
+  if(unit==='년') return Math.round(v)+'년';
+  return '';
 }
 function syncCardSlider(slider){
   var v=parseFloat(slider.value);
@@ -1537,7 +1553,7 @@ function syncCardSlider(slider){
   var pvid=slider.getAttribute('data-pvid');
   if(slider.getAttribute('data-showpv')==='1'&&pvid){
     var pv=document.getElementById(pvid);
-    if(pv) pv.textContent=csPreviewText(v);
+    if(pv) pv.textContent=csPreviewText(v,slider.getAttribute('data-unit'));
   }
   updateCard(+slider.getAttribute('data-cid'), slider.getAttribute('data-key'), v);
   _autoGoals();
@@ -1557,7 +1573,7 @@ function syncCardNumber(input){
   var pvid=input.getAttribute('data-pvid');
   if(input.getAttribute('data-showpv')==='1'&&pvid){
     var pv=document.getElementById(pvid);
-    if(pv) pv.textContent=csPreviewText(v);
+    if(pv) pv.textContent=csPreviewText(v,input.getAttribute('data-unit'));
   }
   updateCard(+input.getAttribute('data-cid'), input.getAttribute('data-key'), v);
   _autoGoals();
@@ -1578,7 +1594,7 @@ function syncCardNumberBlur(input){
   var pvid=input.getAttribute('data-pvid');
   if(input.getAttribute('data-showpv')==='1'&&pvid){
     var pv=document.getElementById(pvid);
-    if(pv) pv.textContent=csPreviewText(v);
+    if(pv) pv.textContent=csPreviewText(v,input.getAttribute('data-unit'));
   }
   updateCard(+input.getAttribute('data-cid'), input.getAttribute('data-key'), v);
   _autoGoals();
