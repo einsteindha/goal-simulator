@@ -667,13 +667,13 @@ function addGoalCard(preset={}){
   const card={
     id, type,
     name:preset.name||info.name,
-    amount:preset.amount||3000,
+    amount:preset.amount||5000,
     years:preset.years||10,
-    initAsset:preset.initAsset||0,
-    monthly:preset.monthly||20,
-    nomRet:preset.nomRet!==undefined?preset.nomRet:6,
+    initAsset:preset.initAsset!==undefined?preset.initAsset:1000,
+    monthly:preset.monthly||30,
+    nomRet:preset.nomRet!==undefined?preset.nomRet:5,
     inflation:preset.inflation!==undefined?preset.inflation:2.5,
-    stdDev:preset.stdDev!==undefined?preset.stdDev:10,
+    stdDev:preset.stdDev!==undefined?preset.stdDev:8,
     monthlyGrowth:preset.monthlyGrowth||false,
     monthlyGrowthRate:preset.monthlyGrowthRate!==undefined?preset.monthlyGrowthRate:2,
     color:PALETTE[(id-1)%PALETTE.length],
@@ -2423,7 +2423,7 @@ initSliders();updateReal();
 (function(){var el=document.getElementById('h-term');if(el){var v=parseFloat(el.value),mn=parseFloat(el.min),mx=parseFloat(el.max);el.style.setProperty('--pct',((v-mn)/(mx-mn)*100).toFixed(1)+'%');}})();
 // 기본 목적자금 카드 2개
 updateFutureIncome();
-addGoalCard({type:'general',name:'목적자금',amount:3000,years:5,initAsset:500,monthly:30,nomRet:5,inflation:2.5,stdDev:8});
+addGoalCard({type:'general',name:'목적자금',amount:5000,years:10,initAsset:1000,monthly:30,nomRet:5,inflation:2.5,stdDev:8});
 addGoalCard({type:'housing',name:'주택 구입',housePrice:80000,amount:80000,years:15,initAsset:20000,monthly:300,nomRet:5,inflation:3,stdDev:7,priceRise:3});
 // 초기 자동 실행
 setTimeout(function(){
