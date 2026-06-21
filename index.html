@@ -925,7 +925,7 @@ let lastHousingEquity=null;
 function runAllGoals(){
   if(goalCards.length===0){alert('목적자금을 먼저 추가하세요');return;}
   const incomeGrowth=parseFloat($('g-income-growth').value)/100;
-  const runs=1500;
+  const runs=3000;
 
   goalCards.forEach(function(card){
     if(card.type==='retire') return; // 은퇴 카드 제외
