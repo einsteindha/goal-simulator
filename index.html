@@ -228,7 +228,7 @@ select option{background:var(--bg2)}
 .hdr-btn:hover{background:var(--bg3);color:var(--text)}
 .hdr-btn-print{border-color:rgba(196,147,63,.4);color:var(--gold);background:rgba(196,147,63,.08)}
 .hdr-btn-print:hover{background:rgba(196,147,63,.15)}
-@media(max-width:600px){.header-page-sub{display:none}.hdr-btn{padding:4px 8px}}
+@media(max-width:600px){.header-page-sub{display:none}.hdr-btn{padding:4px 8px}.header-left{flex-direction:column;align-items:flex-start;gap:.1rem}.header-page-title{white-space:nowrap;font-size:.72rem;color:var(--text3);font-weight:400}}
 @media print{
   html,body{overflow:visible!important;height:auto!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
   /* Goals tab: show only #print-content */
@@ -693,6 +693,10 @@ function switchPage(name,btn){
   _currentPage=name;
   const show=(name==='goals'||name==='housing');
   document.querySelectorAll('.header-right button').forEach(b=>b.style.display=show?'':'none');
+  if(name==='housing'&&_housingChartsPending){
+    _housingChartsPending=false;
+    setTimeout(runHousing,50);
+  }
 }
 function switchHTab(name,btn){
   ['cash','amort','burden'].forEach(n=>$('h-panel-'+n).classList.remove('active'));
@@ -1182,7 +1186,7 @@ function renderFirstGoalChart(){
 // HOUSING
 // ══════════════════════════════════
 const LTV={toher:{first:40,replace:40,multi:30},speculate:{first:40,replace:40,multi:30},adjust:{first:70,replace:60,multi:50},normal:{first:80,replace:80,multi:60}};
-let chartAmort=null,chartBalance=null;
+let chartAmort=null,chartBalance=null,_housingChartsPending=false;
 
 function mpi(P,r,n){if(r===0)return P/n;const mr=r/12;return P*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1)}
 function api(P,r,y){return mpi(P,r,y*12)*12}
@@ -1325,35 +1329,59 @@ function runHousing(){
 
   const eiY=aggY(mres[0].sched),epY=aggY(mres[1].sched),blY=aggY(mres[2].sched),mxY=aggY(mres[3].sched);
   const yL=eiY.map(d=>d.year+"년");
-  if(chartAmort)chartAmort.destroy();
-  (function(){var cv=$("chart-amort");cv.removeAttribute('style');
-    var ar=(cv.parentElement&&cv.parentElement.clientWidth>0)?(cv.parentElement.clientWidth/220):2.5;
-    chartAmort=new Chart(cv,{type:"bar",data:{labels:yL,datasets:[
-      {label:"원금",data:eiY.map(d=>Math.round(d.prin)),backgroundColor:"rgba(196,147,63,.7)",stack:"s"},
-      {label:"이자",data:eiY.map(d=>Math.round(d.int)),backgroundColor:"rgba(148,48,48,.5)",stack:"s"}
-    ]},options:{responsive:true,maintainAspectRatio:true,aspectRatio:ar,animation:{duration:0},plugins:{
-      legend:{labels:{color:"#7a776f",font:{size:11}}},
-      tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
-    },scales:{
-      x:{stacked:true,ticks:{color:"#7a776f",font:{size:10}},grid:{color:"rgba(26,24,20,.06)"}},
-      y:{stacked:true,ticks:{color:"#7a776f",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(26,24,20,.06)"}}
-    }}});
+  (function(){
+    var cv=$("chart-amort");
+    var containerW=cv.parentElement?cv.parentElement.clientWidth:0;
+    if(containerW===0&&chartAmort){
+      chartAmort.data.labels=yL;
+      chartAmort.data.datasets[0].data=eiY.map(d=>Math.round(d.prin));
+      chartAmort.data.datasets[1].data=eiY.map(d=>Math.round(d.int));
+      chartAmort.update();
+      _housingChartsPending=true;
+    }else{
+      if(chartAmort)chartAmort.destroy();
+      cv.removeAttribute('style');
+      var ar=containerW>0?(containerW/220):2.5;
+      chartAmort=new Chart(cv,{type:"bar",data:{labels:yL,datasets:[
+        {label:"원금",data:eiY.map(d=>Math.round(d.prin)),backgroundColor:"rgba(196,147,63,.7)",stack:"s"},
+        {label:"이자",data:eiY.map(d=>Math.round(d.int)),backgroundColor:"rgba(148,48,48,.5)",stack:"s"}
+      ]},options:{responsive:true,maintainAspectRatio:true,aspectRatio:ar,animation:{duration:0},plugins:{
+        legend:{labels:{color:"#7a776f",font:{size:11}}},
+        tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
+      },scales:{
+        x:{stacked:true,ticks:{color:"#7a776f",font:{size:10}},grid:{color:"rgba(26,24,20,.06)"}},
+        y:{stacked:true,ticks:{color:"#7a776f",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(26,24,20,.06)"}}
+      }}});
+      if(containerW===0)_housingChartsPending=true;
+    }
   })();
-  if(chartBalance)chartBalance.destroy();
-  (function(){var cv=$("chart-balance");cv.removeAttribute('style');
-    var ar=(cv.parentElement&&cv.parentElement.clientWidth>0)?(cv.parentElement.clientWidth/160):3.5;
-    chartBalance=new Chart(cv,{type:"line",data:{labels:["시작",...yL],datasets:[
-      {label:"원리금균등",data:[finalLoan,...eiY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#c4933f",borderWidth:2,pointRadius:0,tension:.3,fill:false},
-      {label:"원금균등",data:[finalLoan,...epY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#2a7c6f",borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
-      {label:"만기일시",data:[finalLoan,...blY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#943030",borderWidth:1.5,pointRadius:0,tension:.3,fill:false,borderDash:[4,3]},
-      {label:"혼합",data:[finalLoan,...mxY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#7c5cbf",borderWidth:1.5,pointRadius:0,tension:.3,fill:false}
-    ]},options:{responsive:true,maintainAspectRatio:true,aspectRatio:ar,animation:{duration:0},interaction:{mode:"index",intersect:false},plugins:{
-      legend:{labels:{color:"#7a776f",font:{size:11}}},
-      tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
-    },scales:{
-      x:{ticks:{color:"#7a776f",font:{size:10}},grid:{color:"rgba(26,24,20,.06)"}},
-      y:{ticks:{color:"#7a776f",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(26,24,20,.06)"}}
-    }}});
+  (function(){
+    var cv=$("chart-balance");
+    var containerW=cv.parentElement?cv.parentElement.clientWidth:0;
+    if(containerW===0&&chartBalance){
+      chartBalance.data.labels=["시작",...yL];
+      chartBalance.data.datasets[0].data=[finalLoan,...eiY.map(d=>d.bal)].map(v=>Math.round(v));
+      chartBalance.data.datasets[1].data=[finalLoan,...epY.map(d=>d.bal)].map(v=>Math.round(v));
+      chartBalance.data.datasets[2].data=[finalLoan,...blY.map(d=>d.bal)].map(v=>Math.round(v));
+      chartBalance.data.datasets[3].data=[finalLoan,...mxY.map(d=>d.bal)].map(v=>Math.round(v));
+      chartBalance.update();
+    }else{
+      if(chartBalance)chartBalance.destroy();
+      cv.removeAttribute('style');
+      var ar=containerW>0?(containerW/160):3.5;
+      chartBalance=new Chart(cv,{type:"line",data:{labels:["시작",...yL],datasets:[
+        {label:"원리금균등",data:[finalLoan,...eiY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#c4933f",borderWidth:2,pointRadius:0,tension:.3,fill:false},
+        {label:"원금균등",data:[finalLoan,...epY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#2a7c6f",borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
+        {label:"만기일시",data:[finalLoan,...blY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#943030",borderWidth:1.5,pointRadius:0,tension:.3,fill:false,borderDash:[4,3]},
+        {label:"혼합",data:[finalLoan,...mxY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#7c5cbf",borderWidth:1.5,pointRadius:0,tension:.3,fill:false}
+      ]},options:{responsive:true,maintainAspectRatio:true,aspectRatio:ar,animation:{duration:0},interaction:{mode:"index",intersect:false},plugins:{
+        legend:{labels:{color:"#7a776f",font:{size:11}}},
+        tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
+      },scales:{
+        x:{ticks:{color:"#7a776f",font:{size:10}},grid:{color:"rgba(26,24,20,.06)"}},
+        y:{ticks:{color:"#7a776f",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(26,24,20,.06)"}}
+      }}});
+    }
   })();
 
 
@@ -2543,13 +2571,13 @@ function resetAll(){
 
 function _capturePrint(cv){
   if(!cv||!cv.getContext)return'';
-  var maxW=600,scl=Math.min(1,maxW/cv.width);
+  var maxW=1600,scl=Math.min(1,maxW/cv.width);
   var w=Math.round(cv.width*scl),h=Math.round(cv.height*scl);
   var tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;
   var ctx=tmp.getContext('2d');
-  ctx.fillStyle='#faf8f4';ctx.fillRect(0,0,w,h); // 투명→배경색(JPEG 검은색 방지)
+  ctx.fillStyle='#faf8f4';ctx.fillRect(0,0,w,h);
   ctx.drawImage(cv,0,0,w,h);
-  return tmp.toDataURL('image/jpeg',0.88);
+  return tmp.toDataURL('image/png');
 }
 function _identifiHdr(sub){
   return '<div class="ph-logo-hdr">'
