@@ -1031,6 +1031,7 @@ function runAllGoals(){
     const loanNeeded=futureHP2>0?Math.max(0,futureHP2-fvEquity):0;
     $('h-equity').value=fvEquity;
     if(futureHP2){$('h-price').value=futureHP2;}
+    _autoHousing();
     const box=$('equity-link-box');
     box.style.display='block';
     box.innerHTML='<b>📊 목적자금 시뮬레이션 연결</b><br>'
@@ -2673,8 +2674,8 @@ function doPrintHousing(){
       +'<div class="gauge-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px">'+gaugeHTML+'</div>'
       +summaryHTML
       +'<div class="repay-compare" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px">'+repayHTML+'</div>'
-      +(amortImg?'<div class="chart-wrap" style="margin-top:8px"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><img style="width:100%;display:block" src="'+amortImg+'"></div>':'')
-      +(balImg?'<div class="chart-wrap" style="margin-top:8px"><div class="chart-title">상환방식별 잔여 원금 추이</div><img style="width:100%;display:block" src="'+balImg+'"></div>':'')
+      +(amortImg?'<div class="chart-wrap" style="margin-top:8px"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><img style="width:60%;display:block" src="'+amortImg+'"></div>':'')
+      +(balImg?'<div class="chart-wrap" style="margin-top:8px"><div class="chart-title">상환방식별 잔여 원금 추이</div><img style="width:60%;display:block" src="'+balImg+'"></div>':'')
     +'</div>'
   +'</div>';
   // 2페이지: 상환 스케줄
