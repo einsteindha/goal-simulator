@@ -2535,6 +2535,14 @@ function resetAll(){
   setTimeout(runAllGoals,200);
 }
 
+function _capturePrint(cv){
+  if(!cv||!cv.getContext)return'';
+  var maxW=750,scl=Math.min(1,maxW/cv.width);
+  var w=Math.round(cv.width*scl),h=Math.round(cv.height*scl);
+  var tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;
+  tmp.getContext('2d').drawImage(cv,0,0,w,h);
+  return tmp.toDataURL('image/jpeg',0.92);
+}
 function _identifiHdr(sub){
   return '<div class="ph-logo-hdr">'
     +'<div class="ph-logo">Identi<span style="color:var(--gold);font-style:italic">Fi</span></div>'
@@ -2560,10 +2568,9 @@ function doPrintGoals(){
   // 아직 렌더링 안 된 차트만 렌더링 (이미 렌더링된 것은 건드리지 않음 → Canvas 충돌 방지)
   cards.forEach(function(c){renderGoalPanelChart(c.id);});
   setTimeout(function(){
-    const tlCanvas=$('chart-timeline');
-    const tlImg=tlCanvas&&tlCanvas.getContext?tlCanvas.toDataURL('image/png'):'';
+    const tlImg=_capturePrint($('chart-timeline'));
     const cardImgs={};
-    cards.forEach(function(c){const cv=$('gc-chart-'+c.id);if(cv&&cv.getContext)cardImgs[c.id]=cv.toDataURL('image/png');});
+    cards.forEach(function(c){cardImgs[c.id]=_capturePrint($('gc-chart-'+c.id));});
     // 패널 원래 상태로 복원
     allPanels.forEach(function(p){p.style.display='';});
     const igVal=($('g-ig-v')||{}).textContent||'—';
@@ -2616,7 +2623,7 @@ function doPrintGoals(){
     window.print();
     document.body.removeChild(frame);
     document.body.classList.remove('print-goals');
-  },300);
+  },80);
 }
 function doPrintHousing(){
   var content=$('housing-content');
@@ -2625,9 +2632,8 @@ function doPrintHousing(){
   var income=+($('h-income')||{}).value||0;
   if(!income){alert('연 소득을 입력해 주세요.\nDSR · 스트레스DSR · DTI 한도 계산에 소득이 필요합니다.');return;}
   // 차트 이미지 캡처
-  var amortCv=$('chart-amort'),balCv=$('chart-balance');
-  var amortImg=amortCv&&amortCv.getContext?amortCv.toDataURL('image/png'):'';
-  var balImg=balCv&&balCv.getContext?balCv.toDataURL('image/png'):'';
+  var amortImg=_capturePrint($('chart-amort'));
+  var balImg=_capturePrint($('chart-balance'));
   // 헬퍼
   function sv(id){var e=$(id);return e?e.value:'0';}
   function selT(id){var e=$(id);return e?e.options[e.selectedIndex].text:'—';}
