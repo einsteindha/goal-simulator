@@ -231,13 +231,25 @@ select option{background:var(--bg2)}
 @media(max-width:600px){.header-page-sub{display:none}.hdr-btn{padding:4px 8px}}
 @media print{
   html,body{overflow:visible!important;height:auto!important}
-  .header,.nav-bar,.btn-run,.btn-sm,.btn-success,.hdr-btn{display:none!important}
-  .page{height:auto!important;overflow:visible!important}
-  .page:not(.print-show){display:none!important}
-  .page.print-show{display:flex!important}
-  #page-goals.print-show{break-after:page}
-  .split-left{width:38%!important;flex-shrink:0!important;overflow:visible!important}
-  .split-right{overflow:visible!important}
+  /* Goals tab print: show only #print-content */
+  body.print-goals>*:not(#print-content){display:none!important}
+  /* Other tabs: existing behavior */
+  body:not(.print-goals) .header,body:not(.print-goals) .nav-bar,body:not(.print-goals) .btn-run,body:not(.print-goals) .btn-sm,body:not(.print-goals) .btn-success,body:not(.print-goals) .hdr-btn{display:none!important}
+  body:not(.print-goals) .page{height:auto!important;overflow:visible!important}
+  body:not(.print-goals) .page:not(.print-show){display:none!important}
+  body:not(.print-goals) .page.print-show{display:flex!important}
+  body:not(.print-goals) .split-left{width:38%!important;flex-shrink:0!important;overflow:visible!important}
+  body:not(.print-goals) .split-right{overflow:visible!important}
+  /* Print page structure */
+  .pp{break-after:page;padding:0 0 24px}
+  .pp:last-child{break-after:avoid}
+  .pp-hdr{border:1px solid var(--border2);border-radius:4px;padding:12px 16px;background:var(--bg2);margin-bottom:14px}
+  .pp-hdr-title{font-family:'DM Serif Display',serif;font-size:13px;font-weight:400;color:var(--text);margin-bottom:4px;letter-spacing:.02em}
+  .pp-hdr-ig{font-size:11px;color:var(--text2);margin-bottom:8px}
+  .pp-kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pp-card-name{font-family:'Noto Serif KR',serif;font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text);padding:8px 0 6px;border-bottom:1px solid var(--border)}
+  .pp-card-settings{font-size:11px;color:var(--text2);margin:6px 0 10px;padding:8px 12px;background:var(--bg3);border-radius:4px}
+  .pp-chart-img{width:100%;display:block;margin-top:10px}
 }
 </style>
 </head>
@@ -2507,10 +2519,74 @@ function resetAll(){
 }
 
 function doPrint(){
+  if(_currentPage==='goals'){doPrintGoals();return;}
   const pg=$('page-'+_currentPage);
   if(pg)pg.classList.add('print-show');
   window.print();
   if(pg)pg.classList.remove('print-show');
+}
+function doPrintGoals(){
+  const cards=goalCards.filter(function(c){return c.result;});
+  if(!cards.length){alert('먼저 목적자금 계산을 실행해주세요.');return;}
+  // 모든 카드 차트를 강제 렌더링
+  cards.forEach(function(c){renderedPanels.delete(c.id);renderGoalPanelChart(c.id);});
+  setTimeout(function(){
+    // 캔버스 이미지 캡처
+    const tlCanvas=$('chart-timeline');
+    const tlImg=tlCanvas&&tlCanvas.getContext?tlCanvas.toDataURL('image/png'):'';
+    const cardImgs={};
+    cards.forEach(function(c){const cv=$('gc-chart-'+c.id);if(cv&&cv.getContext)cardImgs[c.id]=cv.toDataURL('image/png');});
+    // 공통값
+    const igVal=($('g-ig-v')||{}).textContent||'—';
+    const totalMonthly=cards.reduce(function(s,c){return s+c.monthly;},0);
+    const totalNeeded=cards.reduce(function(s,c){return s+(c.result?Math.max(0,c.result.det.neededMonthly):0);},0);
+    const neededSub=totalNeeded<=totalMonthly?'✓ 현재 적립으로 충분':'추가 '+wan(totalNeeded-totalMonthly)+' 필요';
+    const neededColor=totalNeeded<=totalMonthly?'var(--green)':'var(--amber)';
+    function commonHdr(){
+      return '<div class="pp-hdr">'
+        +'<div class="pp-hdr-title">공통 설정</div>'
+        +'<div class="pp-hdr-ig">소득 성장률 <b>'+igVal+'</b></div>'
+        +'<div class="pp-kpi-row">'
+          +'<div class="dash-card"><div class="dash-label">총 월 적립액</div>'
+            +'<div class="dash-value" style="color:var(--blue)">'+wan(totalMonthly)+'</div>'
+            +'<div class="dash-sub">목적자금 '+cards.length+'개 합산</div></div>'
+          +'<div class="dash-card"><div class="dash-label">달성 필요 월 적립</div>'
+            +'<div class="dash-value" style="color:'+neededColor+'">'+wan(totalNeeded)+'</div>'
+            +'<div class="dash-sub">'+neededSub+'</div></div>'
+        +'</div>'
+      +'</div>';
+    }
+    var pagesHTML='';
+    cards.forEach(function(c){
+      var panel=$('gp-'+c.id);
+      var msgEl=panel?panel.querySelector('.result-msg'):null;
+      var msgHTML=msgEl?msgEl.outerHTML:'';
+      var s=c.type==='housing'
+        ?'현재가 '+wan(c.housePrice||c.amount)+' · '+c.years+'년 · 초기자산 '+wan(c.initAsset)+' · 월적립 '+wan(c.monthly)+' · 집값상승 '+(c.priceRise||3)+'%'
+        :'목표 '+wan(c.amount)+' · '+c.years+'년 · 초기자산 '+wan(c.initAsset)+' · 월적립 '+wan(c.monthly)+' · 기대수익률 '+c.nomRet+'% · 물가 '+(c.inflation||2.5)+'% · 변동성 '+c.stdDev+'%';
+      pagesHTML+='<div class="pp">'
+        +commonHdr()
+        +'<div class="pp-card-name">'+GOAL_TYPES[c.type].icon+' '+c.name+'</div>'
+        +'<div class="pp-card-settings">'+s+'</div>'
+        +msgHTML
+        +(cardImgs[c.id]?'<img class="pp-chart-img" src="'+cardImgs[c.id]+'">':'')
+      +'</div>';
+    });
+    // 마지막 페이지: 타임라인
+    pagesHTML+='<div class="pp">'
+      +commonHdr()
+      +'<div class="pp-card-name">목적자금 타임라인 — 전체 자산 경로</div>'
+      +(tlImg?'<img class="pp-chart-img" src="'+tlImg+'">':'')
+    +'</div>';
+    var frame=document.createElement('div');
+    frame.id='print-content';
+    frame.innerHTML=pagesHTML;
+    document.body.classList.add('print-goals');
+    document.body.appendChild(frame);
+    window.print();
+    document.body.removeChild(frame);
+    document.body.classList.remove('print-goals');
+  },300);
 }
 
 // ══ INIT ══
