@@ -2501,8 +2501,9 @@ function resetAll(){
 }
 
 function doPrint(){
+  const showHousing=+($('h-income')&&$('h-income').value)||0;
   $('page-goals').classList.add('print-show');
-  $('page-housing').classList.add('print-show');
+  if(showHousing)$('page-housing').classList.add('print-show');
   window.print();
   $('page-goals').classList.remove('print-show');
   $('page-housing').classList.remove('print-show');
