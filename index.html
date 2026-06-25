@@ -657,10 +657,14 @@ function initSliders(){
 function updateReal(){}
 
 // ══ PAGE NAV ══
+let _currentPage='goals';
 function switchPage(name,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   $('page-'+name).classList.add('active');btn.classList.add('active');
+  _currentPage=name;
+  const show=(name==='goals'||name==='housing');
+  document.querySelectorAll('.header-right button').forEach(b=>b.style.display=show?'':'none');
 }
 function switchHTab(name,btn){
   ['cash','amort','burden'].forEach(n=>$('h-panel-'+n).classList.remove('active'));
@@ -2503,12 +2507,10 @@ function resetAll(){
 }
 
 function doPrint(){
-  const showHousing=+($('h-income')&&$('h-income').value)||0;
-  $('page-goals').classList.add('print-show');
-  if(showHousing)$('page-housing').classList.add('print-show');
+  const pg=$('page-'+_currentPage);
+  if(pg)pg.classList.add('print-show');
   window.print();
-  $('page-goals').classList.remove('print-show');
-  $('page-housing').classList.remove('print-show');
+  if(pg)pg.classList.remove('print-show');
 }
 
 // ══ INIT ══
