@@ -1081,7 +1081,7 @@ function renderGoalsTimeline(){
     datasets.push({label:card.name+' 목표',data:goalData,borderColor:card.color,borderWidth:1,borderDash:[4,3],pointRadius:0,fill:false,tension:.3});
   });
   if(chartTimeline)chartTimeline.destroy();
-  chartTimeline=new Chart($('chart-timeline'),{type:'line',data:{labels,datasets},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#7a776f',font:{size:10},filter:i=>!i.text.includes('목표')}},tooltip:{backgroundColor:'#3d3a35',titleColor:'#faf8f4',bodyColor:'#d0ccc3',callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}억`}}},scales:{x:{ticks:{color:'#7a776f',font:{size:10}},grid:{color:'rgba(26,24,20,.06)'}},y:{ticks:{color:'#7a776f',font:{size:10},callback:v=>v+'억'},grid:{color:'rgba(26,24,20,.06)'}}}}});
+  chartTimeline=new Chart($('chart-timeline'),{type:'line',data:{labels,datasets},options:{responsive:true,animation:{duration:0},interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#7a776f',font:{size:10},filter:i=>!i.text.includes('목표')}},tooltip:{backgroundColor:'#3d3a35',titleColor:'#faf8f4',bodyColor:'#d0ccc3',callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}억`}}},scales:{x:{ticks:{color:'#7a776f',font:{size:10}},grid:{color:'rgba(26,24,20,.06)'}},y:{ticks:{color:'#7a776f',font:{size:10},callback:v=>v+'억'},grid:{color:'rgba(26,24,20,.06)'}}}}});
 }
 
 function renderGoalDetailTabs(){
@@ -1159,7 +1159,7 @@ function renderGoalPanelChart(id){
         borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false,tension:.3},
     ]},
     options:{
-      responsive:true,
+      responsive:true,animation:{duration:0},
       interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{labels:{color:'#7a776f',font:{size:10}}},
@@ -1328,7 +1328,7 @@ function runHousing(){
   chartAmort=new Chart($("chart-amort"),{type:"bar",maintainAspectRatio:true,data:{labels:yL,datasets:[
     {label:"원금",data:eiY.map(d=>Math.round(d.prin)),backgroundColor:"rgba(196,147,63,.7)",stack:"s"},
     {label:"이자",data:eiY.map(d=>Math.round(d.int)),backgroundColor:"rgba(148,48,48,.5)",stack:"s"}
-  ]},options:{responsive:true,plugins:{
+  ]},options:{responsive:true,animation:{duration:0},plugins:{
     legend:{labels:{color:"#7a776f",font:{size:11}}},
     tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
   },scales:{
@@ -1341,7 +1341,7 @@ function runHousing(){
     {label:"원금균등",data:[finalLoan,...epY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#2a7c6f",borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
     {label:"만기일시",data:[finalLoan,...blY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#943030",borderWidth:1.5,pointRadius:0,tension:.3,fill:false,borderDash:[4,3]},
     {label:"혼합",data:[finalLoan,...mxY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#7c5cbf",borderWidth:1.5,pointRadius:0,tension:.3,fill:false}
-  ]},options:{responsive:true,interaction:{mode:"index",intersect:false},plugins:{
+  ]},options:{responsive:true,animation:{duration:0},interaction:{mode:"index",intersect:false},plugins:{
     legend:{labels:{color:"#7a776f",font:{size:11}}},
     tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
   },scales:{
@@ -2673,10 +2673,8 @@ function doPrintHousing(){
       +'<div class="gauge-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px">'+gaugeHTML+'</div>'
       +summaryHTML
       +'<div class="repay-compare" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px">'+repayHTML+'</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-        +(amortImg?'<div class="chart-wrap"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><img style="width:100%;display:block" src="'+amortImg+'"></div>':'')
-        +(balImg?'<div class="chart-wrap"><div class="chart-title">상환방식별 잔여 원금 추이</div><img style="width:100%;display:block" src="'+balImg+'"></div>':'')
-      +'</div>'
+      +(amortImg?'<div class="chart-wrap" style="margin-top:8px"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><img style="width:100%;display:block" src="'+amortImg+'"></div>':'')
+      +(balImg?'<div class="chart-wrap" style="margin-top:8px"><div class="chart-title">상환방식별 잔여 원금 추이</div><img style="width:100%;display:block" src="'+balImg+'"></div>':'')
     +'</div>'
   +'</div>';
   // 2페이지: 상환 스케줄
