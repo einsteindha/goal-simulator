@@ -1326,29 +1326,35 @@ function runHousing(){
   const eiY=aggY(mres[0].sched),epY=aggY(mres[1].sched),blY=aggY(mres[2].sched),mxY=aggY(mres[3].sched);
   const yL=eiY.map(d=>d.year+"년");
   if(chartAmort)chartAmort.destroy();
-  chartAmort=new Chart($("chart-amort"),{type:"bar",maintainAspectRatio:true,data:{labels:yL,datasets:[
-    {label:"원금",data:eiY.map(d=>Math.round(d.prin)),backgroundColor:"rgba(196,147,63,.7)",stack:"s"},
-    {label:"이자",data:eiY.map(d=>Math.round(d.int)),backgroundColor:"rgba(148,48,48,.5)",stack:"s"}
-  ]},options:{responsive:true,animation:{duration:0},plugins:{
-    legend:{labels:{color:"#7a776f",font:{size:11}}},
-    tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
-  },scales:{
-    x:{stacked:true,ticks:{color:"#7a776f",font:{size:10}},grid:{color:"rgba(26,24,20,.06)"}},
-    y:{stacked:true,ticks:{color:"#7a776f",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(26,24,20,.06)"}}
-  }}});
+  (function(){var cv=$("chart-amort");cv.removeAttribute('style');
+    var ar=(cv.parentElement&&cv.parentElement.clientWidth>0)?(cv.parentElement.clientWidth/220):2.5;
+    chartAmort=new Chart(cv,{type:"bar",data:{labels:yL,datasets:[
+      {label:"원금",data:eiY.map(d=>Math.round(d.prin)),backgroundColor:"rgba(196,147,63,.7)",stack:"s"},
+      {label:"이자",data:eiY.map(d=>Math.round(d.int)),backgroundColor:"rgba(148,48,48,.5)",stack:"s"}
+    ]},options:{responsive:true,maintainAspectRatio:true,aspectRatio:ar,animation:{duration:0},plugins:{
+      legend:{labels:{color:"#7a776f",font:{size:11}}},
+      tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
+    },scales:{
+      x:{stacked:true,ticks:{color:"#7a776f",font:{size:10}},grid:{color:"rgba(26,24,20,.06)"}},
+      y:{stacked:true,ticks:{color:"#7a776f",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(26,24,20,.06)"}}
+    }}});
+  })();
   if(chartBalance)chartBalance.destroy();
-  chartBalance=new Chart($("chart-balance"),{type:"line",maintainAspectRatio:true,data:{labels:["시작",...yL],datasets:[
-    {label:"원리금균등",data:[finalLoan,...eiY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#c4933f",borderWidth:2,pointRadius:0,tension:.3,fill:false},
-    {label:"원금균등",data:[finalLoan,...epY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#2a7c6f",borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
-    {label:"만기일시",data:[finalLoan,...blY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#943030",borderWidth:1.5,pointRadius:0,tension:.3,fill:false,borderDash:[4,3]},
-    {label:"혼합",data:[finalLoan,...mxY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#7c5cbf",borderWidth:1.5,pointRadius:0,tension:.3,fill:false}
-  ]},options:{responsive:true,animation:{duration:0},interaction:{mode:"index",intersect:false},plugins:{
-    legend:{labels:{color:"#7a776f",font:{size:11}}},
-    tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
-  },scales:{
-    x:{ticks:{color:"#7a776f",font:{size:10}},grid:{color:"rgba(26,24,20,.06)"}},
-    y:{ticks:{color:"#7a776f",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(26,24,20,.06)"}}
-  }}});
+  (function(){var cv=$("chart-balance");cv.removeAttribute('style');
+    var ar=(cv.parentElement&&cv.parentElement.clientWidth>0)?(cv.parentElement.clientWidth/160):3.5;
+    chartBalance=new Chart(cv,{type:"line",data:{labels:["시작",...yL],datasets:[
+      {label:"원리금균등",data:[finalLoan,...eiY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#c4933f",borderWidth:2,pointRadius:0,tension:.3,fill:false},
+      {label:"원금균등",data:[finalLoan,...epY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#2a7c6f",borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
+      {label:"만기일시",data:[finalLoan,...blY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#943030",borderWidth:1.5,pointRadius:0,tension:.3,fill:false,borderDash:[4,3]},
+      {label:"혼합",data:[finalLoan,...mxY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#7c5cbf",borderWidth:1.5,pointRadius:0,tension:.3,fill:false}
+    ]},options:{responsive:true,maintainAspectRatio:true,aspectRatio:ar,animation:{duration:0},interaction:{mode:"index",intersect:false},plugins:{
+      legend:{labels:{color:"#7a776f",font:{size:11}}},
+      tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
+    },scales:{
+      x:{ticks:{color:"#7a776f",font:{size:10}},grid:{color:"rgba(26,24,20,.06)"}},
+      y:{ticks:{color:"#7a776f",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(26,24,20,.06)"}}
+    }}});
+  })();
 
 
 
