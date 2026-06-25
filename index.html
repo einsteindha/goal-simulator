@@ -230,17 +230,24 @@ select option{background:var(--bg2)}
 .hdr-btn-print:hover{background:rgba(196,147,63,.15)}
 @media(max-width:600px){.header-page-sub{display:none}.hdr-btn{padding:4px 8px}}
 @media print{
-  html,body{overflow:visible!important;height:auto!important}
-  /* Goals tab print: show only #print-content */
+  html,body{overflow:visible!important;height:auto!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  /* Goals tab: show only #print-content */
   body.print-goals>*:not(#print-content){display:none!important}
-  /* Other tabs: existing behavior */
-  body:not(.print-goals) .header,body:not(.print-goals) .nav-bar,body:not(.print-goals) .btn-run,body:not(.print-goals) .btn-sm,body:not(.print-goals) .btn-success,body:not(.print-goals) .hdr-btn{display:none!important}
-  body:not(.print-goals) .page{height:auto!important;overflow:visible!important}
-  body:not(.print-goals) .page:not(.print-show){display:none!important}
-  body:not(.print-goals) .page.print-show{display:flex!important}
-  body:not(.print-goals) .split-left{width:38%!important;flex-shrink:0!important;overflow:visible!important}
-  body:not(.print-goals) .split-right{overflow:visible!important}
-  /* Print page structure */
+  /* Housing tab: show only #print-content-h */
+  body.print-housing>*:not(#print-content-h){display:none!important}
+  /* Other tabs: hide chrome */
+  body:not(.print-goals):not(.print-housing) .header,body:not(.print-goals):not(.print-housing) .nav-bar,body:not(.print-goals):not(.print-housing) .btn-run,body:not(.print-goals):not(.print-housing) .btn-sm,body:not(.print-goals):not(.print-housing) .btn-success,body:not(.print-goals):not(.print-housing) .hdr-btn{display:none!important}
+  body:not(.print-goals):not(.print-housing) .page{height:auto!important;overflow:visible!important}
+  body:not(.print-goals):not(.print-housing) .page:not(.print-show){display:none!important}
+  body:not(.print-goals):not(.print-housing) .page.print-show{display:flex!important}
+  body:not(.print-goals):not(.print-housing) .split-left{width:38%!important;flex-shrink:0!important;overflow:visible!important}
+  body:not(.print-goals):not(.print-housing) .split-right{overflow:visible!important}
+  /* Common print IdentiFi header */
+  .ph-logo-hdr{display:flex;align-items:center;gap:1rem;border-bottom:1px solid var(--border2);padding-bottom:.5rem;margin-bottom:1rem}
+  .ph-logo{font-family:'DM Serif Display',serif;font-size:17px;font-weight:400;color:var(--text)}
+  .ph-page-title{font-family:'Noto Serif KR',serif;font-size:.9rem;font-weight:500}
+  .ph-page-sub{font-size:.7rem;color:var(--text2)}
+  /* Goals print pages (.pp) */
   .pp{break-after:page;padding:0 0 24px}
   .pp:last-child{break-after:avoid}
   .pp-hdr{border:1px solid var(--border2);border-radius:4px;padding:12px 16px;background:var(--bg2);margin-bottom:14px}
@@ -250,6 +257,15 @@ select option{background:var(--bg2)}
   .pp-card-name{font-family:'Noto Serif KR',serif;font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text);padding:8px 0 6px;border-bottom:1px solid var(--border)}
   .pp-card-settings{font-size:11px;color:var(--text2);margin:6px 0 10px;padding:8px 12px;background:var(--bg3);border-radius:4px}
   .pp-chart-img{width:100%;display:block;margin-top:10px}
+  /* Housing print pages (.php) */
+  .php{break-after:page;padding:0 0 24px}
+  .php:last-child{break-after:avoid}
+  .php-section-hd{font-family:'Noto Serif KR',serif;font-size:13px;font-weight:600;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .phpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
+  .phpi-block{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 12px}
+  .phpi-title{font-family:'Noto Serif KR',serif;font-size:11px;font-weight:600;color:var(--text);margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+  .phpi-row{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;color:var(--text2)}
+  .phpi-row b{color:var(--text);font-weight:600}
 }
 </style>
 </head>
@@ -2518,8 +2534,15 @@ function resetAll(){
   setTimeout(runAllGoals,200);
 }
 
+function _identifiHdr(sub){
+  return '<div class="ph-logo-hdr">'
+    +'<div class="ph-logo">Identi<span style="color:var(--gold);font-style:italic">Fi</span></div>'
+    +'<div><div class="ph-page-title">목적자금 시뮬레이터</div>'
+    +'<div class="ph-page-sub">'+(sub||'목적자금 복수 계산 · 주택구입 대출 분석')+'</div></div></div>';
+}
 function doPrint(){
   if(_currentPage==='goals'){doPrintGoals();return;}
+  if(_currentPage==='housing'){doPrintHousing();return;}
   const pg=$('page-'+_currentPage);
   if(pg)pg.classList.add('print-show');
   window.print();
@@ -2528,15 +2551,12 @@ function doPrint(){
 function doPrintGoals(){
   const cards=goalCards.filter(function(c){return c.result;});
   if(!cards.length){alert('먼저 목적자금 계산을 실행해주세요.');return;}
-  // 모든 카드 차트를 강제 렌더링
   cards.forEach(function(c){renderedPanels.delete(c.id);renderGoalPanelChart(c.id);});
   setTimeout(function(){
-    // 캔버스 이미지 캡처
     const tlCanvas=$('chart-timeline');
     const tlImg=tlCanvas&&tlCanvas.getContext?tlCanvas.toDataURL('image/png'):'';
     const cardImgs={};
     cards.forEach(function(c){const cv=$('gc-chart-'+c.id);if(cv&&cv.getContext)cardImgs[c.id]=cv.toDataURL('image/png');});
-    // 공통값
     const igVal=($('g-ig-v')||{}).textContent||'—';
     const totalMonthly=cards.reduce(function(s,c){return s+c.monthly;},0);
     const totalNeeded=cards.reduce(function(s,c){return s+(c.result?Math.max(0,c.result.det.neededMonthly):0);},0);
@@ -2565,6 +2585,7 @@ function doPrintGoals(){
         ?'현재가 '+wan(c.housePrice||c.amount)+' · '+c.years+'년 · 초기자산 '+wan(c.initAsset)+' · 월적립 '+wan(c.monthly)+' · 집값상승 '+(c.priceRise||3)+'%'
         :'목표 '+wan(c.amount)+' · '+c.years+'년 · 초기자산 '+wan(c.initAsset)+' · 월적립 '+wan(c.monthly)+' · 기대수익률 '+c.nomRet+'% · 물가 '+(c.inflation||2.5)+'% · 변동성 '+c.stdDev+'%';
       pagesHTML+='<div class="pp">'
+        +_identifiHdr('목적자금 복수 계산')
         +commonHdr()
         +'<div class="pp-card-name">'+GOAL_TYPES[c.type].icon+' '+c.name+'</div>'
         +'<div class="pp-card-settings">'+s+'</div>'
@@ -2572,8 +2593,8 @@ function doPrintGoals(){
         +(cardImgs[c.id]?'<img class="pp-chart-img" src="'+cardImgs[c.id]+'">':'')
       +'</div>';
     });
-    // 마지막 페이지: 타임라인
     pagesHTML+='<div class="pp">'
+      +_identifiHdr('목적자금 복수 계산')
       +commonHdr()
       +'<div class="pp-card-name">목적자금 타임라인 — 전체 자산 경로</div>'
       +(tlImg?'<img class="pp-chart-img" src="'+tlImg+'">':'')
@@ -2587,6 +2608,86 @@ function doPrintGoals(){
     document.body.removeChild(frame);
     document.body.classList.remove('print-goals');
   },300);
+}
+function doPrintHousing(){
+  var content=$('housing-content');
+  if(!content||content.style.display==='none'){alert('먼저 분석을 실행해주세요.');return;}
+  // 차트 이미지 캡처
+  var amortCv=$('chart-amort'),balCv=$('chart-balance');
+  var amortImg=amortCv&&amortCv.getContext?amortCv.toDataURL('image/png'):'';
+  var balImg=balCv&&balCv.getContext?balCv.toDataURL('image/png'):'';
+  // 헬퍼
+  function sv(id){var e=$(id);return e?e.value:'0';}
+  function selT(id){var e=$(id);return e?e.options[e.selectedIndex].text:'—';}
+  function rv(id){var e=$(id);return e?e.textContent:'—';}
+  function row(l,v){return '<div class="phpi-row"><span>'+l+'</span><b>'+v+'</b></div>';}
+  function secHd(t){return '<div class="php-section-hd">'+t+'</div>';}
+  // 입력 정보 그리드
+  var infoGrid='<div class="phpi-grid">'
+    +'<div class="phpi-block"><div class="phpi-title">주택 정보</div>'
+      +row('주택 매매가격',wan(+sv('h-price')||0))
+      +row('자기자금',wan(+sv('h-equity')||0))
+      +row('임차보증금',wan(+sv('h-deposit')||0))
+      +row('지역 구분',selT('h-zone'))
+      +row('매수인 주택 보유',selT('h-htype'))
+      +row('세입자 여부',selT('h-tenant-yn'))
+    +'</div>'
+    +'<div class="phpi-block"><div class="phpi-title">소득 & 기존 부채</div>'
+      +row('현재 연 소득',wan(+sv('h-income')||0))
+      +row('기존 주담대 월 상환',wan(+sv('h-exist-m')||0))
+      +row('기타 대출 연 원리금',wan(+sv('h-exist-o')||0))
+    +'</div>'
+    +'<div class="phpi-block"><div class="phpi-title">대출 조건</div>'
+      +row('대출 금리',rv('h-rate-v'))
+      +row('스트레스 가산금리',rv('h-stress-v'))
+      +row('대출 기간',rv('h-term-v'))
+      +row('혼합형 거치',selT('h-grace'))
+    +'</div>'
+  +'</div>';
+  // 결과 요소 추출
+  var gaugeHTML=$('h-gauge-area')?$('h-gauge-area').innerHTML:'';
+  var summaryEl=$('h-summary');
+  var summaryHTML=summaryEl?summaryEl.outerHTML:'';
+  var repayHTML=$('h-repay-compare')?$('h-repay-compare').innerHTML:'';
+  var amortTbody=$('h-amort-tbody')?$('h-amort-tbody').innerHTML:'';
+  var burdenHTML=$('h-burden-content')?$('h-burden-content').innerHTML:'';
+  var ihdr=_identifiHdr('주택구입 대출 분석');
+  var html='';
+  // 1페이지: 입력 정보
+  html+='<div class="php">'
+    +ihdr
+    +secHd('주택구입 분석 — 입력 정보')
+    +infoGrid
+  +'</div>';
+  // 2페이지: 대출 결과 + 현금흐름 그래프
+  html+='<div class="php">'
+    +ihdr
+    +secHd('대출 분석 결과')
+    +'<div class="gauge-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">'+gaugeHTML+'</div>'
+    +summaryHTML
+    +'<div class="repay-compare" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">'+repayHTML+'</div>'
+    +(amortImg?'<div class="chart-wrap" style="margin-bottom:10px"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><img style="width:100%;display:block" src="'+amortImg+'"></div>':'')
+    +(balImg?'<div class="chart-wrap"><div class="chart-title">상환방식별 잔여 원금 추이</div><img style="width:100%;display:block" src="'+balImg+'"></div>':'')
+  +'</div>';
+  // 3페이지: 상환 스케줄 + 부담 분석
+  html+='<div class="php">'
+    +ihdr
+    +secHd('상환 스케줄')
+    +'<div class="chart-wrap" style="padding:0;overflow:hidden;margin-bottom:16px">'
+      +'<table class="data-table"><thead><tr><th>연도</th><th>연 원금</th><th>연 이자</th><th>연 합계</th><th>잔여원금</th><th>DSR점유</th></tr></thead>'
+      +'<tbody>'+amortTbody+'</tbody></table>'
+    +'</div>'
+    +secHd('부담 분석')
+    +burdenHTML
+  +'</div>';
+  var frame=document.createElement('div');
+  frame.id='print-content-h';
+  frame.innerHTML=html;
+  document.body.classList.add('print-housing');
+  document.body.appendChild(frame);
+  window.print();
+  document.body.removeChild(frame);
+  document.body.classList.remove('print-housing');
 }
 
 // ══ INIT ══
