@@ -2571,13 +2571,16 @@ function resetAll(){
 
 function _capturePrint(cv){
   if(!cv||!cv.getContext)return'';
+  var t0=performance.now();
   var maxW=1600,scl=Math.min(1,maxW/cv.width);
   var w=Math.round(cv.width*scl),h=Math.round(cv.height*scl);
   var tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;
   var ctx=tmp.getContext('2d');
   ctx.fillStyle='#faf8f4';ctx.fillRect(0,0,w,h);
   ctx.drawImage(cv,0,0,w,h);
-  return tmp.toDataURL('image/png');
+  var result=tmp.toDataURL('image/png');
+  console.log('[print] '+cv.id+' ('+w+'×'+h+'px): '+(performance.now()-t0).toFixed(1)+'ms, '+(result.length/1024).toFixed(0)+'KB');
+  return result;
 }
 function _identifiHdr(sub){
   return '<div class="ph-logo-hdr">'
@@ -2604,9 +2607,11 @@ function doPrintGoals(){
   // 아직 렌더링 안 된 차트만 렌더링 (이미 렌더링된 것은 건드리지 않음 → Canvas 충돌 방지)
   cards.forEach(function(c){renderGoalPanelChart(c.id);});
   setTimeout(function(){
+    var _tGoal=performance.now();
     const tlImg=_capturePrint($('chart-timeline'));
     const cardImgs={};
     cards.forEach(function(c){cardImgs[c.id]=_capturePrint($('gc-chart-'+c.id));});
+    console.log('[print] 탭1 전체 캡처: '+(performance.now()-_tGoal).toFixed(0)+'ms (차트 '+(cards.length+1)+'개)');
     // 패널 원래 상태로 복원
     allPanels.forEach(function(p){p.style.display='';});
     const igVal=($('g-ig-v')||{}).textContent||'—';
@@ -2668,8 +2673,10 @@ function doPrintHousing(){
   var income=+($('h-income')||{}).value||0;
   if(!income){alert('연 소득을 입력해 주세요.\nDSR · 스트레스DSR · DTI 한도 계산에 소득이 필요합니다.');return;}
   // 차트 이미지 캡처
+  var _tHousing=performance.now();
   var amortImg=_capturePrint($('chart-amort'));
   var balImg=_capturePrint($('chart-balance'));
+  console.log('[print] 탭2 전체 캡처: '+(performance.now()-_tHousing).toFixed(0)+'ms (차트 2개)');
   // 헬퍼
   function sv(id){var e=$(id);return e?e.value:'0';}
   function selT(id){var e=$(id);return e?e.options[e.selectedIndex].text:'—';}
