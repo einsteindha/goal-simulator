@@ -181,7 +181,9 @@ select option{background:var(--bg2)}
 }
 
 .card-slider-row{display:flex;align-items:center;gap:6px;margin-top:4px}
-.card-slider-row input[type=range]{flex:1;min-width:0}
+.card-slider-row input[type=range]{flex:1;min-width:0;height:4px;-webkit-appearance:none;background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--pct,50%),var(--bg4) var(--pct,50%));border-radius:4px;padding:0;border:none;cursor:pointer}
+.card-slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);box-shadow:0 0 0 2px rgba(196,147,63,.3)}
+.card-slider-row input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);box-shadow:0 0 0 2px rgba(196,147,63,.3)}
 .cs-preview{font-size:11px;color:var(--green);font-family:'DM Mono',monospace;min-width:36px;text-align:right;white-space:nowrap}
 .fw-bold{font-weight:700}
 /* 토허제 경고 배너 */
