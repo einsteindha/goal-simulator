@@ -790,8 +790,8 @@ function renderGoalCardsList(){
         +'<div class="goal-card-body" style="display:block;padding:16px;text-align:center;line-height:1.8">'
         +'<div style="font-size:12px;color:var(--text2);margin-bottom:12px">은퇴 후 필요 자금은 물가·수익률·기대수명·생활비 등<br>복합적인 변수를 함께 고려해야 합니다.</div>'
         +'<div style="background:rgba(196,147,63,.1);border:1px solid rgba(196,147,63,.3);border-radius:var(--radius-lg);padding:10px 14px;font-size:12px;color:var(--gold)">'
-        +'📊 <b>은퇴 시뮬레이터</b>를 이용해 주세요<br>'
-        +'<span style="font-size:10px;color:var(--text3)">retirement-calculator에서 정밀 분석 가능합니다</span>'
+        +'📊 <b>은퇴 인출 시뮬레이터</b>를 이용해 주세요<br>'
+        +'<a href="https://einsteindha.github.io/retirement-simulator/" target="_blank" rel="noopener" style="font-size:10px;color:var(--gold);font-weight:600;text-decoration:none;cursor:pointer">→ 은퇴 인출 시뮬레이터 열기 ↗</a>'
         +'</div>'
         +'</div></div>';
       return; // forEach 콜백 종료 - 이 카드는 이후 처리 건너뜀
@@ -2549,14 +2549,22 @@ function doPrint(){
   if(pg)pg.classList.remove('print-show');
 }
 function doPrintGoals(){
-  const cards=goalCards.filter(function(c){return c.result;});
-  if(!cards.length){alert('먼저 목적자금 계산을 실행해주세요.');return;}
-  cards.forEach(function(c){renderedPanels.delete(c.id);renderGoalPanelChart(c.id);});
+  // 조기은퇴 준비금 카드는 출력 제외 (결과값 없음)
+  const cards=goalCards.filter(function(c){return c.result && c.type!=='retire';});
+  if(!cards.length){alert('출력할 목적자금 결과가 없습니다.\n조기은퇴 준비금은 은퇴 인출 시뮬레이터를 이용해 주세요.');return;}
+  // 모든 패널을 일시적으로 보이게 해서 Chart.js가 올바른 크기로 렌더링되도록 함
+  const panelsEl=$('goal-result-panels');
+  const allPanels=panelsEl?panelsEl.querySelectorAll('.panel'):[];
+  allPanels.forEach(function(p){p.style.display='block';});
+  // 아직 렌더링 안 된 차트만 렌더링 (이미 렌더링된 것은 건드리지 않음 → Canvas 충돌 방지)
+  cards.forEach(function(c){renderGoalPanelChart(c.id);});
   setTimeout(function(){
     const tlCanvas=$('chart-timeline');
     const tlImg=tlCanvas&&tlCanvas.getContext?tlCanvas.toDataURL('image/png'):'';
     const cardImgs={};
     cards.forEach(function(c){const cv=$('gc-chart-'+c.id);if(cv&&cv.getContext)cardImgs[c.id]=cv.toDataURL('image/png');});
+    // 패널 원래 상태로 복원
+    allPanels.forEach(function(p){p.style.display='';});
     const igVal=($('g-ig-v')||{}).textContent||'—';
     const totalMonthly=cards.reduce(function(s,c){return s+c.monthly;},0);
     const totalNeeded=cards.reduce(function(s,c){return s+(c.result?Math.max(0,c.result.det.neededMonthly):0);},0);
@@ -2612,6 +2620,9 @@ function doPrintGoals(){
 function doPrintHousing(){
   var content=$('housing-content');
   if(!content||content.style.display==='none'){alert('먼저 분석을 실행해주세요.');return;}
+  // 소득 미입력 안내
+  var income=+($('h-income')||{}).value||0;
+  if(!income){alert('연 소득을 입력해 주세요.\nDSR · 스트레스DSR · DTI 한도 계산에 소득이 필요합니다.');return;}
   // 차트 이미지 캡처
   var amortCv=$('chart-amort'),balCv=$('chart-balance');
   var amortImg=amortCv&&amortCv.getContext?amortCv.toDataURL('image/png'):'';
@@ -2633,7 +2644,7 @@ function doPrintHousing(){
       +row('세입자 여부',selT('h-tenant-yn'))
     +'</div>'
     +'<div class="phpi-block"><div class="phpi-title">소득 & 기존 부채</div>'
-      +row('현재 연 소득',wan(+sv('h-income')||0))
+      +row('현재 연 소득',wan(income))
       +row('기존 주담대 월 상환',wan(+sv('h-exist-m')||0))
       +row('기타 대출 연 원리금',wan(+sv('h-exist-o')||0))
     +'</div>'
@@ -2653,30 +2664,33 @@ function doPrintHousing(){
   var burdenHTML=$('h-burden-content')?$('h-burden-content').innerHTML:'';
   var ihdr=_identifiHdr('주택구입 대출 분석');
   var html='';
-  // 1페이지: 입력 정보
+  // 1페이지: 입력 정보 + 대출 분석 결과 + 현금흐름 그래프
   html+='<div class="php">'
     +ihdr
-    +secHd('주택구입 분석 — 입력 정보')
+    +secHd('주택구입 분석')
     +infoGrid
+    +'<div style="margin-top:12px">'
+      +'<div class="gauge-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px">'+gaugeHTML+'</div>'
+      +summaryHTML
+      +'<div class="repay-compare" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px">'+repayHTML+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        +(amortImg?'<div class="chart-wrap"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><img style="width:100%;display:block" src="'+amortImg+'"></div>':'')
+        +(balImg?'<div class="chart-wrap"><div class="chart-title">상환방식별 잔여 원금 추이</div><img style="width:100%;display:block" src="'+balImg+'"></div>':'')
+      +'</div>'
+    +'</div>'
   +'</div>';
-  // 2페이지: 대출 결과 + 현금흐름 그래프
-  html+='<div class="php">'
-    +ihdr
-    +secHd('대출 분석 결과')
-    +'<div class="gauge-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">'+gaugeHTML+'</div>'
-    +summaryHTML
-    +'<div class="repay-compare" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">'+repayHTML+'</div>'
-    +(amortImg?'<div class="chart-wrap" style="margin-bottom:10px"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><img style="width:100%;display:block" src="'+amortImg+'"></div>':'')
-    +(balImg?'<div class="chart-wrap"><div class="chart-title">상환방식별 잔여 원금 추이</div><img style="width:100%;display:block" src="'+balImg+'"></div>':'')
-  +'</div>';
-  // 3페이지: 상환 스케줄 + 부담 분석
+  // 2페이지: 상환 스케줄
   html+='<div class="php">'
     +ihdr
     +secHd('상환 스케줄')
-    +'<div class="chart-wrap" style="padding:0;overflow:hidden;margin-bottom:16px">'
+    +'<div class="chart-wrap" style="padding:0;overflow:hidden">'
       +'<table class="data-table"><thead><tr><th>연도</th><th>연 원금</th><th>연 이자</th><th>연 합계</th><th>잔여원금</th><th>DSR점유</th></tr></thead>'
       +'<tbody>'+amortTbody+'</tbody></table>'
     +'</div>'
+  +'</div>';
+  // 3페이지: 부담 분석
+  html+='<div class="php">'
+    +ihdr
     +secHd('부담 분석')
     +burdenHTML
   +'</div>';
