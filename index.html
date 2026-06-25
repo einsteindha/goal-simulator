@@ -221,6 +221,22 @@ select option{background:var(--bg2)}
 .gift-warn-info{background:rgba(124,92,191,.08);border:1px solid rgba(124,92,191,.3);color:var(--purple)}
 .gift-hint-box{font-size:10px;color:var(--text3);padding:8px 12px;border-left:2px solid var(--border2);margin-top:6px;line-height:1.8}
 .gift-section-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.header-right{display:flex;align-items:center;gap:6px;margin-left:auto}
+.hdr-btn{padding:5px 12px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);border-radius:var(--radius);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.hdr-btn:hover{background:var(--bg3);color:var(--text)}
+.hdr-btn-print{border-color:rgba(196,147,63,.4);color:var(--gold);background:rgba(196,147,63,.08)}
+.hdr-btn-print:hover{background:rgba(196,147,63,.15)}
+@media(max-width:600px){.header-page-sub{display:none}.hdr-btn{padding:4px 8px}}
+@media print{
+  html,body{overflow:visible!important;height:auto!important}
+  .header,.nav-bar,.btn-run,.btn-sm,.btn-success,.hdr-btn{display:none!important}
+  .page{height:auto!important;overflow:visible!important}
+  .page:not(.print-show){display:none!important}
+  .page.print-show{display:flex!important}
+  #page-goals.print-show{break-after:page}
+  .split-left{width:38%!important;flex-shrink:0!important;overflow:visible!important}
+  .split-right{overflow:visible!important}
+}
 </style>
 </head>
 <body>
@@ -231,6 +247,12 @@ select option{background:var(--bg2)}
       <div class="header-page-title">목적자금 시뮬레이터</div>
       <div class="header-page-sub">목적자금 복수 계산 · 주택구입 대출 분석 · 증여 · 전세 vs 월세</div>
     </div>
+  </div>
+  <div class="header-right">
+    <button class="hdr-btn" onclick="saveData()">저장</button>
+    <button class="hdr-btn" onclick="loadData()">불러오기</button>
+    <button class="hdr-btn hdr-btn-print" onclick="doPrint()">출력</button>
+    <button class="hdr-btn" onclick="resetAll()">초기화</button>
   </div>
 </div>
 
@@ -2421,6 +2443,70 @@ function runGift(){
   $('gf-detail').innerHTML = surchargeNotice + detail3col;
 }
 
+
+// ══ SAVE / LOAD / PRINT / RESET ══
+const _SI=['g-income-growth','h-price','h-equity','h-deposit','h-income','h-exist-m','h-exist-o','h-rate','h-stress','h-term','gf-market','gf-giftamt','gf-saleamt','gf-std','gf-cost','gf-tenant','gf-wedding','gf-prior','gf-hold','gf-live','gf-debt','jm-jeonse','jm-jloan','jm-jrise','jm-jrate','jm-mdeposit','jm-mrent','jm-mrise','jm-years'];
+const _SS=['h-zone','h-htype','h-tenant-yn','h-grace','gf-assettype','gf-htype','gf-adjzone','gf-rel','gf-grantee-house','gf-buyer-type','gf-buyer-house'];
+const _SK='goal-sim-v1';
+
+function saveData(){
+  const d={v:1,inputs:{},selects:{},cards:goalCards.map(c=>({...c,result:null}))};
+  _SI.forEach(id=>{const el=$(id);if(el)d.inputs[id]=el.value;});
+  _SS.forEach(id=>{const el=$(id);if(el)d.selects[id]=el.value;});
+  try{localStorage.setItem(_SK,JSON.stringify(d));alert('저장됐습니다.');}
+  catch(e){alert('저장 실패: '+e.message);}
+}
+
+function loadData(){
+  const raw=localStorage.getItem(_SK);
+  if(!raw){alert('저장된 데이터가 없습니다.');return;}
+  try{
+    const d=JSON.parse(raw);
+    Object.keys(d.inputs||{}).forEach(id=>{const el=$(id);if(el)el.value=d.inputs[id];});
+    Object.keys(d.selects||{}).forEach(id=>{const el=$(id);if(el)el.value=d.selects[id];});
+    document.querySelectorAll('input[type=range]').forEach(el=>{
+      const mn=parseFloat(el.min),mx=parseFloat(el.max),v=parseFloat(el.value);
+      el.style.setProperty('--pct',((v-mn)/(mx-mn)*100).toFixed(1)+'%');
+      el.dispatchEvent(new Event('input'));
+    });
+    goalCards=[];gid=0;
+    (d.cards||[]).forEach(c=>{gid=Math.max(gid,c.id||0);goalCards.push({...c,result:null});});
+    renderGoalCardsList();
+    if(goalCards.length>0)setTimeout(runAllGoals,300);
+    setTimeout(runHousing,100);
+    setTimeout(runJeonseMonth,100);
+    setTimeout(runGift,100);
+    alert('불러오기 완료');
+  }catch(e){alert('불러오기 실패: '+e.message);}
+}
+
+function resetAll(){
+  if(!confirm('모든 입력값을 초기화하시겠습니까?'))return;
+  goalCards=[];gid=0;
+  renderGoalCardsList();
+  const def={'g-income-growth':2,'h-price':80000,'h-equity':30000,'h-deposit':0,'h-income':0,'h-exist-m':0,'h-exist-o':0,'h-rate':4.5,'h-stress':0.38,'h-term':30,'jm-jeonse':30000,'jm-jloan':10000,'jm-jrise':2.5,'jm-jrate':2.8,'jm-mdeposit':1000,'jm-mrent':100,'jm-mrise':3,'jm-years':5};
+  Object.keys(def).forEach(id=>{const el=$(id);if(el)el.value=def[id];});
+  ['gf-market','gf-giftamt','gf-saleamt','gf-std','gf-cost','gf-tenant','gf-wedding','gf-prior'].forEach(id=>{const el=$(id);if(el)el.value='';});
+  [['h-zone','adjust'],['h-htype','first'],['h-tenant-yn','no'],['h-grace','0'],['gf-assettype','house'],['gf-htype','one'],['gf-adjzone','yes'],['gf-rel','child'],['gf-grantee-house','none'],['gf-buyer-type','third'],['gf-buyer-house','none']].forEach(([id,v])=>{const el=$(id);if(el)el.value=v;});
+  document.querySelectorAll('input[type=range]').forEach(el=>{
+    const mn=parseFloat(el.min),mx=parseFloat(el.max),v=parseFloat(el.value);
+    el.style.setProperty('--pct',((v-mn)/(mx-mn)*100).toFixed(1)+'%');
+    el.dispatchEvent(new Event('input'));
+  });
+  if($('goals-content'))$('goals-content').style.display='none';
+  if($('goals-empty'))$('goals-empty').style.display='flex';
+  addGoalCard({type:'general',name:'목적자금',amount:5000,years:10,initAsset:1000,monthly:30,nomRet:5,inflation:2.5,stdDev:8});
+  addGoalCard({type:'housing',name:'주택 구입',housePrice:80000,amount:80000,years:15,initAsset:20000,monthly:300,nomRet:5,inflation:3,stdDev:7,priceRise:3});
+  setTimeout(runAllGoals,200);
+}
+
+function doPrint(){
+  $('page-goals').classList.add('print-show');
+  $('page-housing').classList.add('print-show');
+  window.print();
+  $('page-goals').classList.remove('print-show');
+  $('page-housing').classList.remove('print-show');
+}
 
 // ══ INIT ══
 initSliders();updateReal();
