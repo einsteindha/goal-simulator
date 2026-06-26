@@ -1057,7 +1057,7 @@ function runAllGoals(){
   $('goals-empty').style.display='none';
   $('goals-content').style.display='block';
   updateFutureIncome();
-  _startPrintCountdown(7);
+  _startPrintCountdown(5);
 }
 
 function renderGoalsDashboard(){
@@ -2660,7 +2660,7 @@ function doPrintGoals(){
     window.print();
     document.body.removeChild(frame);
     document.body.classList.remove('print-goals');
-  },50);
+  },300);
 }
 function doPrintHousing(){
   var content=$('housing-content');
