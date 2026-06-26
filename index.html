@@ -2613,6 +2613,17 @@ function doPrintGoals(){
   const tlImg=imgs['timeline']||_capturePrint($('chart-timeline'));
   const cardImgs={};
   cards.forEach(function(c){cardImgs[c.id]=imgs[c.id]||'';});
+  // ── 진단: 캡처된 이미지를 2초간 화면에 표시 ──
+  (function(){
+    var dbg=document.createElement('div');
+    dbg.style.cssText='position:fixed;top:10px;left:10px;z-index:9999;background:#fff;border:3px solid red;padding:8px;font-size:11px;max-width:220px';
+    var info='keys:'+Object.keys(imgs).join(',')+'\ntimeline:'+((imgs['timeline']||'').length)+'px';
+    cards.forEach(function(c){info+='\ncard'+c.id+':'+(cardImgs[c.id]||'').length+'ch';});
+    dbg.textContent=info;
+    if(cards[0]&&cardImgs[cards[0].id]){var im=document.createElement('img');im.src=cardImgs[cards[0].id];im.style.cssText='width:200px;display:block;margin-top:4px';dbg.appendChild(im);}
+    document.body.appendChild(dbg);
+    setTimeout(function(){if(dbg.parentNode)dbg.parentNode.removeChild(dbg);},4000);
+  })();
   (function(){
     const igVal=($('g-ig-v')||{}).textContent||'—';
     const totalMonthly=cards.reduce(function(s,c){return s+c.monthly;},0);
