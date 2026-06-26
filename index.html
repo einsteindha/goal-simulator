@@ -2599,12 +2599,19 @@ function doPrintGoals(){
   allPanels.forEach(function(p){p.style.display='block';});
   void (panelsEl&&panelsEl.offsetHeight); // force reflow so clientWidth is correct
   cards.forEach(function(c){
-    var el=$('gc-chart-'+c.id);
-    if(el){var ex=Chart.getChart(el);if(ex)ex.destroy();}
+    var old=$('gc-chart-'+c.id);
+    if(old){
+      try{var ex=Chart.getChart(old);if(ex)ex.destroy();}catch(e){}
+      var fresh=document.createElement('canvas');
+      fresh.id='gc-chart-'+c.id;
+      old.parentNode.replaceChild(fresh,old);
+    }
     renderedPanels.delete(c.id);
     renderGoalPanelChart(c.id);
   });
-  setTimeout(function(){
+  // double-rAF: 첫 번째 rAF에서 Chart.js가 렌더, 두 번째 rAF에서 캡처 보장
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
     const tlImg=_capturePrint($('chart-timeline'));
     const cardImgs={};
     cards.forEach(function(c){cardImgs[c.id]=_capturePrint($('gc-chart-'+c.id));});
@@ -2660,7 +2667,8 @@ function doPrintGoals(){
     window.print();
     document.body.removeChild(frame);
     document.body.classList.remove('print-goals');
-  },300);
+    });
+  });
 }
 function doPrintHousing(){
   var content=$('housing-content');
