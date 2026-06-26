@@ -1166,7 +1166,7 @@ function renderGoalPanelChart(id){
         borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false,tension:.3},
     ]},
     options:{
-      responsive:true,animation:{duration:0},
+      responsive:true,maintainAspectRatio:true,aspectRatio:2,animation:{duration:0},
       interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{labels:{color:'#7a776f',font:{size:10}}},
