@@ -1086,7 +1086,7 @@ function renderGoalsTimeline(){
     datasets.push({label:card.name+' 목표',data:goalData,borderColor:card.color,borderWidth:1,borderDash:[4,3],pointRadius:0,fill:false,tension:.3});
   });
   if(chartTimeline)chartTimeline.destroy();
-  chartTimeline=new Chart($('chart-timeline'),{type:'line',data:{labels,datasets},options:{responsive:true,animation:{duration:0},interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#7a776f',font:{size:10},filter:i=>!i.text.includes('목표')}},tooltip:{backgroundColor:'#3d3a35',titleColor:'#faf8f4',bodyColor:'#d0ccc3',callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}억`}}},scales:{x:{ticks:{color:'#7a776f',font:{size:10}},grid:{color:'rgba(26,24,20,.06)'}},y:{ticks:{color:'#7a776f',font:{size:10},callback:v=>v+'억'},grid:{color:'rgba(26,24,20,.06)'}}}}});
+  chartTimeline=new Chart($('chart-timeline'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:true,aspectRatio:2.5,animation:{duration:0},interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#7a776f',font:{size:10},filter:i=>!i.text.includes('목표')}},tooltip:{backgroundColor:'#3d3a35',titleColor:'#faf8f4',bodyColor:'#d0ccc3',callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}억`}}},scales:{x:{ticks:{color:'#7a776f',font:{size:10}},grid:{color:'rgba(26,24,20,.06)'}},y:{ticks:{color:'#7a776f',font:{size:10},callback:v=>v+'억'},grid:{color:'rgba(26,24,20,.06)'}}}}});
 }
 
 function renderGoalDetailTabs(){
