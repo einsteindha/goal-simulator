@@ -2564,12 +2564,24 @@ function _identifiHdr(sub){
     +'<div class="ph-page-sub">'+(sub||'목적자금 복수 계산 · 주택구입 대출 분석')+'</div></div></div>';
 }
 function doPrint(){
-  if(_currentPage==='goals'){doPrintGoals();return;}
-  if(_currentPage==='housing'){doPrintHousing();return;}
-  const pg=$('page-'+_currentPage);
-  if(pg)pg.classList.add('print-show');
-  window.print();
-  if(pg)pg.classList.remove('print-show');
+  var btn=document.querySelector('.hdr-btn-print');
+  var orig=btn?btn.textContent:'';
+  var count=3;
+  if(btn){btn.disabled=true;btn.textContent='🖨️ '+count;}
+  var iv=setInterval(function(){
+    count--;
+    if(count>0){if(btn)btn.textContent='🖨️ '+count;}
+    else{
+      clearInterval(iv);
+      if(btn)btn.textContent='🖨️ 준비 중';
+      setTimeout(function(){
+        if(_currentPage==='goals'){doPrintGoals();}
+        else if(_currentPage==='housing'){doPrintHousing();}
+        else{var pg=$('page-'+_currentPage);if(pg)pg.classList.add('print-show');window.print();if(pg)pg.classList.remove('print-show');}
+        if(btn){btn.disabled=false;btn.textContent=orig;}
+      },300);
+    }
+  },1000);
 }
 function doPrintGoals(){
   // 조기은퇴 준비금 카드는 출력 제외 (결과값 없음)
