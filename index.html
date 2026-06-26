@@ -1386,7 +1386,13 @@ function runHousing(){
 
   const inc12=income/12;
   $('h-burden-content').innerHTML=`<div class="chart-wrap" style="padding:14px"><div class="chart-title">소득 대비 월 상환 부담</div><div style="display:grid;gap:10px;margin-top:8px">${mres.map(m=>{const pp=Math.min(m.fp/inc12*100,100);const col=pp>40?'var(--red)':pp>30?'var(--amber)':'var(--green)';return`<div><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--text2)">${m.name}</span><span style="font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:${col}">${wan(m.fp)}/월 (${(m.fp/inc12*100).toFixed(1)}%)</span></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pp}%;background:${col}"></div></div></div>`;}).join('')}</div><div style="margin-top:12px;font-size:11px;color:var(--text2);line-height:1.8">월소득 <b>${wan(inc12)}</b> · DSR <b style="color:${dsrAct>40?'var(--red)':'var(--green)'}">${dsrAct.toFixed(1)}%</b> · 총이자(원리금균등): <b style="color:var(--amber)">${wan(mres[0].ti)}</b> / 원금의 ${(mres[0].ti/finalLoan*100).toFixed(0)}%</div></div><div class="chart-wrap" style="padding:14px"><div class="chart-title">상환방식별 총 이자 비교</div><div style="display:grid;gap:8px;margin-top:6px">${mres.map(m=>`<div style="display:flex;align-items:center;gap:10px"><div style="width:80px;font-size:11px;color:var(--text2)">${m.name}</div><div style="flex:1"><div class="progress-bar-wrap"><div class="progress-bar" style="width:${Math.min(m.ti/mres[2].ti*100,100)}%;background:${m.c}"></div></div></div><div style="font-size:11px;font-family:'DM Mono',monospace;color:${m.c};min-width:80px;text-align:right">이자 ${wan(m.ti)}</div></div>`).join('')}</div></div>`;
-  _enablePrintBtn();
+  window._housingPrintImgs={};
+  _disablePrintBtn();
+  setTimeout(function(){
+    window._housingPrintImgs['amort']=_capturePrint($('chart-amort'));
+    window._housingPrintImgs['bal']=_capturePrint($('chart-balance'));
+    _enablePrintBtn();
+  },500);
 }
 
 
@@ -2664,9 +2670,10 @@ function doPrintHousing(){
   // 소득 미입력 안내
   var income=+($('h-income')||{}).value||0;
   if(!income){alert('연 소득을 입력해 주세요.\nDSR · 스트레스DSR · DTI 한도 계산에 소득이 필요합니다.');return;}
-  // 차트 이미지 캡처
-  var amortImg=_capturePrint($('chart-amort'));
-  var balImg=_capturePrint($('chart-balance'));
+  // 계산 시점에 미리 저장된 이미지 사용
+  var _hi=window._housingPrintImgs||{};
+  var amortImg=_hi['amort']||_capturePrint($('chart-amort'));
+  var balImg=_hi['bal']||_capturePrint($('chart-balance'));
   // 헬퍼
   function sv(id){var e=$(id);return e?e.value:'0';}
   function selT(id){var e=$(id);return e?e.options[e.selectedIndex].text:'—';}
