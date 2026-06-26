@@ -2605,9 +2605,10 @@ function doPrintGoals(){
   // 모든 패널을 일시적으로 보이게 해서 Chart.js가 올바른 크기로 렌더링되도록 함
   const panelsEl=$('goal-result-panels');
   const allPanels=panelsEl?panelsEl.querySelectorAll('.panel'):[];
-  // 패널 잠깐 열어서 캡처 (차트는 이미 renderGoalDetailTabs에서 pre-render됨)
+  // 패널 열기 → rAF1(ResizeObserver+Chart.js redraw) → rAF2(캡처)
   allPanels.forEach(function(p){p.style.display='block';});
   requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
     const tlImg=_capturePrint($('chart-timeline'));
     const cardImgs={};
     cards.forEach(function(c){cardImgs[c.id]=_capturePrint($('gc-chart-'+c.id));});
@@ -2663,6 +2664,7 @@ function doPrintGoals(){
     window.print();
     document.body.removeChild(frame);
     document.body.classList.remove('print-goals');
+    });
   });
 }
 function doPrintHousing(){
