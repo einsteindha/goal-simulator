@@ -2752,9 +2752,14 @@ function doPrintHousing(){
   frame.innerHTML=html;
   document.body.classList.add('print-housing');
   document.body.appendChild(frame);
-  window.print();
-  document.body.removeChild(frame);
-  document.body.classList.remove('print-housing');
+  var imgEls=frame.querySelectorAll('img');
+  var pending=imgEls.length;
+  function _doPrintH(){window.print();document.body.removeChild(frame);document.body.classList.remove('print-housing');}
+  if(!pending){_doPrintH();}
+  else{imgEls.forEach(function(img){
+    if(img.complete){if(--pending===0)_doPrintH();}
+    else{img.onload=img.onerror=function(){if(--pending===0)_doPrintH();};}
+  });}
 }
 
 // ══ INIT ══
