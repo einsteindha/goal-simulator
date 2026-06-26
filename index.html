@@ -1057,7 +1057,7 @@ function runAllGoals(){
   $('goals-empty').style.display='none';
   $('goals-content').style.display='block';
   updateFutureIncome();
-  _startPrintCountdown(5);
+  _startPrintCountdown(3);
 }
 
 function renderGoalsDashboard(){
@@ -1099,7 +1099,16 @@ function renderGoalDetailTabs(){
   const panels=$('goal-result-panels');
   tabs.innerHTML=goalCards.filter(c=>c.result).map((c,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="switchGoalTab(${c.id},this)">${GOAL_TYPES[c.type].icon} ${c.name}</button>`).join('');
   panels.innerHTML=goalCards.filter(c=>c.result).map((c,i)=>`<div id="gp-${c.id}" class="panel ${i===0?'active':''}">${buildGoalPanel(c)}</div>`).join('');
-  setTimeout(renderFirstGoalChart, 50);
+  // 모든 카드 차트를 패널 잠깐 열어서 미리 렌더 (canvas 내용은 숨겨도 유지됨)
+  setTimeout(function(){
+    var allPanels=panels?panels.querySelectorAll('.panel'):[];
+    allPanels.forEach(function(p){p.style.display='block';});
+    void (panels&&panels.offsetHeight);
+    goalCards.filter(function(c){return c.result;}).forEach(function(c){renderGoalPanelChart(c.id);});
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      allPanels.forEach(function(p){p.style.display='';});
+    });});
+  },50);
 }
 
 function switchGoalTab(id,btn){
@@ -1370,7 +1379,7 @@ function runHousing(){
 
   const inc12=income/12;
   $('h-burden-content').innerHTML=`<div class="chart-wrap" style="padding:14px"><div class="chart-title">소득 대비 월 상환 부담</div><div style="display:grid;gap:10px;margin-top:8px">${mres.map(m=>{const pp=Math.min(m.fp/inc12*100,100);const col=pp>40?'var(--red)':pp>30?'var(--amber)':'var(--green)';return`<div><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--text2)">${m.name}</span><span style="font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:${col}">${wan(m.fp)}/월 (${(m.fp/inc12*100).toFixed(1)}%)</span></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pp}%;background:${col}"></div></div></div>`;}).join('')}</div><div style="margin-top:12px;font-size:11px;color:var(--text2);line-height:1.8">월소득 <b>${wan(inc12)}</b> · DSR <b style="color:${dsrAct>40?'var(--red)':'var(--green)'}">${dsrAct.toFixed(1)}%</b> · 총이자(원리금균등): <b style="color:var(--amber)">${wan(mres[0].ti)}</b> / 원금의 ${(mres[0].ti/finalLoan*100).toFixed(0)}%</div></div><div class="chart-wrap" style="padding:14px"><div class="chart-title">상환방식별 총 이자 비교</div><div style="display:grid;gap:8px;margin-top:6px">${mres.map(m=>`<div style="display:flex;align-items:center;gap:10px"><div style="width:80px;font-size:11px;color:var(--text2)">${m.name}</div><div style="flex:1"><div class="progress-bar-wrap"><div class="progress-bar" style="width:${Math.min(m.ti/mres[2].ti*100,100)}%;background:${m.c}"></div></div></div><div style="font-size:11px;font-family:'DM Mono',monospace;color:${m.c};min-width:80px;text-align:right">이자 ${wan(m.ti)}</div></div>`).join('')}</div></div>`;
-  _startPrintCountdown(5);
+  _startPrintCountdown(3);
 }
 
 
@@ -2596,22 +2605,9 @@ function doPrintGoals(){
   // 모든 패널을 일시적으로 보이게 해서 Chart.js가 올바른 크기로 렌더링되도록 함
   const panelsEl=$('goal-result-panels');
   const allPanels=panelsEl?panelsEl.querySelectorAll('.panel'):[];
+  // 패널 잠깐 열어서 캡처 (차트는 이미 renderGoalDetailTabs에서 pre-render됨)
   allPanels.forEach(function(p){p.style.display='block';});
-  void (panelsEl&&panelsEl.offsetHeight); // force reflow so clientWidth is correct
-  cards.forEach(function(c){
-    var old=$('gc-chart-'+c.id);
-    if(old){
-      try{var ex=Chart.getChart(old);if(ex)ex.destroy();}catch(e){}
-      var fresh=document.createElement('canvas');
-      fresh.id='gc-chart-'+c.id;
-      old.parentNode.replaceChild(fresh,old);
-    }
-    renderedPanels.delete(c.id);
-    renderGoalPanelChart(c.id);
-  });
-  // double-rAF: 첫 번째 rAF에서 Chart.js가 렌더, 두 번째 rAF에서 캡처 보장
   requestAnimationFrame(function(){
-    requestAnimationFrame(function(){
     const tlImg=_capturePrint($('chart-timeline'));
     const cardImgs={};
     cards.forEach(function(c){cardImgs[c.id]=_capturePrint($('gc-chart-'+c.id));});
@@ -2667,7 +2663,6 @@ function doPrintGoals(){
     window.print();
     document.body.removeChild(frame);
     document.body.classList.remove('print-goals');
-    });
   });
 }
 function doPrintHousing(){
