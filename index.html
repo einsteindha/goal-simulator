@@ -2563,16 +2563,18 @@ function _identifiHdr(sub){
     +'<div><div class="ph-page-title">목적자금 시뮬레이터</div>'
     +'<div class="ph-page-sub">'+(sub||'목적자금 복수 계산 · 주택구입 대출 분석')+'</div></div></div>';
 }
+var _printIv=null;
 function doPrint(){
   var btn=document.querySelector('.hdr-btn-print');
-  var orig=btn?btn.textContent:'';
-  var count=3;
+  var orig='🖨️ 출력';
+  if(_printIv){clearInterval(_printIv);_printIv=null;}
+  var count=5;
   if(btn){btn.disabled=true;btn.textContent='🖨️ '+count;}
-  var iv=setInterval(function(){
+  _printIv=setInterval(function(){
     count--;
     if(count>0){if(btn)btn.textContent='🖨️ '+count;}
     else{
-      clearInterval(iv);
+      clearInterval(_printIv);_printIv=null;
       if(btn)btn.textContent='🖨️ 준비 중';
       setTimeout(function(){
         if(_currentPage==='goals'){doPrintGoals();}
@@ -2706,10 +2708,8 @@ function doPrintHousing(){
       +'<div class="gauge-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px">'+gaugeHTML+'</div>'
       +summaryHTML
       +'<div class="repay-compare" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px">'+repayHTML+'</div>'
-      +((amortImg||balImg)?'<div style="display:flex;gap:10px;margin-top:8px">'
-        +(amortImg?'<div style="flex:1;min-width:0"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><img style="width:100%;display:block" src="'+amortImg+'"></div>':'')
-        +(balImg?'<div style="flex:1;min-width:0"><div class="chart-title">상환방식별 잔여 원금 추이</div><img style="width:100%;display:block" src="'+balImg+'"></div>':'')
-      +'</div>':'')
+      +(amortImg?'<div class="chart-wrap" style="margin-top:8px"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><img style="width:100%;display:block" src="'+amortImg+'"></div>':'')
+      +(balImg?'<div class="chart-wrap" style="margin-top:8px"><div class="chart-title">상환방식별 잔여 원금 추이</div><img style="width:100%;display:block" src="'+balImg+'"></div>':'')
     +'</div>'
   +'</div>';
   // 2페이지: 상환 스케줄
