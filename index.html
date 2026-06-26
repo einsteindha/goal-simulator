@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1099,15 +1099,21 @@ function renderGoalDetailTabs(){
   const panels=$('goal-result-panels');
   tabs.innerHTML=goalCards.filter(c=>c.result).map((c,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="switchGoalTab(${c.id},this)">${GOAL_TYPES[c.type].icon} ${c.name}</button>`).join('');
   panels.innerHTML=goalCards.filter(c=>c.result).map((c,i)=>`<div id="gp-${c.id}" class="panel ${i===0?'active':''}">${buildGoalPanel(c)}</div>`).join('');
-  // 모든 카드 차트를 패널 잠깐 열어서 미리 렌더 (canvas 내용은 숨겨도 유지됨)
+  // 모든 패널 잠깐 열어 차트 렌더 → 그려진 시점에 base64 저장 → 패널 복원
+  window._goalPrintImgs={};
   setTimeout(function(){
     var allPanels=panels?panels.querySelectorAll('.panel'):[];
     allPanels.forEach(function(p){p.style.display='block';});
     void (panels&&panels.offsetHeight);
     goalCards.filter(function(c){return c.result;}).forEach(function(c){renderGoalPanelChart(c.id);});
-    requestAnimationFrame(function(){requestAnimationFrame(function(){
+    // 500ms 후 캡처: ResizeObserver+draw 완전히 완료된 후
+    setTimeout(function(){
+      window._goalPrintImgs['timeline']=_capturePrint($('chart-timeline'));
+      goalCards.filter(function(c){return c.result;}).forEach(function(c){
+        window._goalPrintImgs[c.id]=_capturePrint($('gc-chart-'+c.id));
+      });
       allPanels.forEach(function(p){p.style.display='';});
-    });});
+    },500);
   },50);
 }
 
@@ -2603,17 +2609,11 @@ function doPrintGoals(){
   const cards=goalCards.filter(function(c){return c.result && c.type!=='retire';});
   if(!cards.length){alert('출력할 목적자금 결과가 없습니다.\n조기은퇴 준비금은 은퇴 인출 시뮬레이터를 이용해 주세요.');return;}
   // 모든 패널을 일시적으로 보이게 해서 Chart.js가 올바른 크기로 렌더링되도록 함
-  const panelsEl=$('goal-result-panels');
-  const allPanels=panelsEl?panelsEl.querySelectorAll('.panel'):[];
-  // 패널 열기 → rAF1(ResizeObserver+Chart.js redraw) → rAF2(캡처)
-  allPanels.forEach(function(p){p.style.display='block';});
-  requestAnimationFrame(function(){
-    requestAnimationFrame(function(){
-    const tlImg=_capturePrint($('chart-timeline'));
-    const cardImgs={};
-    cards.forEach(function(c){cardImgs[c.id]=_capturePrint($('gc-chart-'+c.id));});
-    // 패널 원래 상태로 복원
-    allPanels.forEach(function(p){p.style.display='';});
+  const imgs=window._goalPrintImgs||{};
+  const tlImg=imgs['timeline']||_capturePrint($('chart-timeline'));
+  const cardImgs={};
+  cards.forEach(function(c){cardImgs[c.id]=imgs[c.id]||'';});
+  (function(){
     const igVal=($('g-ig-v')||{}).textContent||'—';
     const totalMonthly=cards.reduce(function(s,c){return s+c.monthly;},0);
     const totalNeeded=cards.reduce(function(s,c){return s+(c.result?Math.max(0,c.result.det.neededMonthly):0);},0);
@@ -2664,8 +2664,7 @@ function doPrintGoals(){
     window.print();
     document.body.removeChild(frame);
     document.body.classList.remove('print-goals');
-    });
-  });
+  })();
 }
 function doPrintHousing(){
   var content=$('housing-content');
