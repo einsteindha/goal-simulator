@@ -1106,7 +1106,21 @@ function renderGoalsTimeline(){
     datasets.push({label:card.name+' 목표',data:goalData,borderColor:card.color,borderWidth:1,borderDash:[4,3],pointRadius:0,fill:false,tension:.3});
   });
   if(chartTimeline)chartTimeline.destroy();
-  chartTimeline=new Chart($('chart-timeline'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:true,aspectRatio:2,animation:{duration:0},interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#7a776f',font:{size:10},filter:i=>!i.text.includes('목표')}},tooltip:{backgroundColor:'#3d3a35',titleColor:'#faf8f4',bodyColor:'#d0ccc3',callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}억`}}},scales:{x:{ticks:{color:'#7a776f',font:{size:10}},grid:{color:'rgba(26,24,20,.06)'}},y:{ticks:{color:'#7a776f',font:{size:10},callback:v=>v+'억'},grid:{color:'rgba(26,24,20,.06)'}}}}});
+  const _tlStartCards=goalCards.filter(c=>c.result&&(c.startYear||0)>0);
+  const _tlStartPlugin={id:'tlStart',afterDraw(chart){
+    if(!_tlStartCards.length)return;
+    const {ctx,scales:{x,y}}=chart;
+    _tlStartCards.forEach(function(c){
+      const xp=x.getPixelForValue(c.startYear);
+      ctx.save();
+      ctx.strokeStyle=c.color+'cc';ctx.lineWidth=1.5;ctx.setLineDash([5,3]);
+      ctx.beginPath();ctx.moveTo(xp,y.top);ctx.lineTo(xp,y.bottom);ctx.stroke();
+      ctx.setLineDash([]);ctx.fillStyle=c.color;ctx.font='bold 9px sans-serif';ctx.textAlign='left';
+      ctx.fillText('▶ '+c.name+' 준비시점',xp+3,y.top+13);
+      ctx.restore();
+    });
+  }};
+  chartTimeline=new Chart($('chart-timeline'),{type:'line',data:{labels,datasets},plugins:[_tlStartPlugin],options:{responsive:true,maintainAspectRatio:true,aspectRatio:2,animation:{duration:0},interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#7a776f',font:{size:10},filter:i=>!i.text.includes('목표')}},tooltip:{backgroundColor:'#3d3a35',titleColor:'#faf8f4',bodyColor:'#d0ccc3',callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}억`}}},scales:{x:{ticks:{color:'#7a776f',font:{size:10}},grid:{color:'rgba(26,24,20,.06)'}},y:{ticks:{color:'#7a776f',font:{size:10},callback:v=>v+'억'},grid:{color:'rgba(26,24,20,.06)'}}}}});
 }
 
 function renderGoalDetailTabs(){
@@ -1184,6 +1198,17 @@ function renderGoalPanelChart(id){
   const labels=['현재'].concat(det.yearData.map(function(d){return d.year+'년';}));
   const goalData=Array.from({length:cardTotalYrs+1},function(_,i){return card.amount*Math.pow(1+cardInflation,i)/10000;});
   var _gcEl=$('gc-chart-'+id); if(!_gcEl)return;
+  const _pSY=card.startYear||0;
+  const _startPlugin=_pSY>0?{id:'panelStart',afterDraw(chart){
+    const {ctx,scales:{x,y}}=chart;
+    const xp=x.getPixelForValue(_pSY);
+    ctx.save();
+    ctx.strokeStyle=card.color+'cc';ctx.lineWidth=1.5;ctx.setLineDash([5,3]);
+    ctx.beginPath();ctx.moveTo(xp,y.top);ctx.lineTo(xp,y.bottom);ctx.stroke();
+    ctx.setLineDash([]);ctx.fillStyle=card.color;ctx.font='bold 9px sans-serif';ctx.textAlign='left';
+    ctx.fillText('준비시점',xp+3,y.top+13);
+    ctx.restore();
+  }}:null;
   new Chart(_gcEl,{
     type:'line',
     data:{labels:labels,datasets:[
@@ -1203,6 +1228,7 @@ function renderGoalPanelChart(id){
         borderColor:'#943030',backgroundColor:'transparent',
         borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false,tension:.3},
     ]},
+    plugins:_pSY>0?[_startPlugin]:[],
     options:{
       responsive:true,maintainAspectRatio:true,aspectRatio:2,animation:{duration:0},
       interaction:{mode:'index',intersect:false},
