@@ -1661,7 +1661,7 @@ function csPreviewText(v,unit){
     return v+'만';
   }
   if(unit==='%') return v.toFixed(1)+'%';
-  if(unit==='년') return Math.round(v)+'년';
+  if(unit==='년') return Math.round(v)===0?'즉시':Math.round(v)+'년';
   return '';
 }
 function syncCardSlider(slider){
