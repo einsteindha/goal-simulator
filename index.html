@@ -745,6 +745,8 @@ function addGoalCard(preset={}){
     stdDev:preset.stdDev!==undefined?preset.stdDev:8,
     monthlyGrowth:preset.monthlyGrowth||false,
     monthlyGrowthRate:preset.monthlyGrowthRate!==undefined?preset.monthlyGrowthRate:2,
+    savingMode:preset.savingMode||'monthly',
+    savingTiming:preset.savingTiming||'end',
     color:PALETTE[(id-1)%PALETTE.length],
     result:null,
   };
@@ -838,12 +840,16 @@ function renderGoalCardsList(){
           +'<div style="margin-top:6px"><label>준비시점 (년) <span style="font-weight:400;color:var(--text3);font-size:10px">— 지금부터 몇 년 후 저축 시작 (0 = 즉시)</span></label>'+cardSlider(cid,'startYear',card.startYear||0,0,50,1,'년')+'</div>'
           +'<div style="margin-top:6px"><label>목표 기간 (년) <span style="font-weight:400;color:var(--text3);font-size:10px">— 준비시점부터 적립 기간</span></label>'+cardSlider(cid,'years',card.years,1,100,1,'년')+'</div>'
           +'<div style="margin-top:6px"><label>현재 보유 (만원)</label>'+cardSlider(cid,'initAsset',card.initAsset,0,500000,1000,'만')+'</div>'
-          +'<div style="margin-top:6px"><label>월 적립 (만원)</label>'+cardSlider(cid,'monthly',card.monthly,10,10000,50,'만')+'</div>'
+          +'<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><label style="margin:0;min-width:60px">적립 주기</label><button onclick="toggleSavingMode('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingMode!=='annual'?'var(--accent)':'var(--border2)')+';border-radius:5px 0 0 5px;border-right:none;background:'+(card.savingMode!=='annual'?'var(--accent)':'transparent')+';color:'+(card.savingMode!=='annual'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">월</button><button onclick="toggleSavingMode('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingMode==='annual'?'var(--accent)':'var(--border2)')+';border-radius:0 5px 5px 0;background:'+(card.savingMode==='annual'?'var(--accent)':'transparent')+';color:'+(card.savingMode==='annual'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">연</button></div>'
+          +(card.savingMode==='annual'?'<div style="margin-top:4px;display:flex;align-items:center;gap:6px"><label style="margin:0;min-width:60px">적립 시점</label><button onclick="toggleSavingTiming('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingTiming==='start'?'var(--accent)':'var(--border2)')+';border-radius:5px 0 0 5px;border-right:none;background:'+(card.savingTiming==='start'?'var(--accent)':'transparent')+';color:'+(card.savingTiming==='start'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">연초</button><button onclick="toggleSavingTiming('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingTiming!=='start'?'var(--accent)':'var(--border2)')+';border-radius:0 5px 5px 0;background:'+(card.savingTiming!=='start'?'var(--accent)':'transparent')+';color:'+(card.savingTiming!=='start'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">연말</button></div>':'')
+          +'<div style="margin-top:6px"><label>'+(card.savingMode==='annual'?'연 적립 (만원)':'월 적립 (만원)')+'</label>'+cardSlider(cid,'monthly',card.monthly,card.savingMode==='annual'?100:10,card.savingMode==='annual'?120000:10000,card.savingMode==='annual'?500:50,'만')+'</div>'
         : '<div style="margin-top:8px"><label>목표금액 (만원)</label>'+cardSlider(cid,'amount',card.amount,100,1000000,1000,'만')+'</div>'
           +'<div style="margin-top:6px"><label>준비시점 (년) <span style="font-weight:400;color:var(--text3);font-size:10px">— 지금부터 몇 년 후 저축 시작 (0 = 즉시)</span></label>'+cardSlider(cid,'startYear',card.startYear||0,0,50,1,'년')+'</div>'
           +'<div style="margin-top:6px"><label>목표 기간 (년) <span style="font-weight:400;color:var(--text3);font-size:10px">— 준비시점부터 적립 기간</span></label>'+cardSlider(cid,'years',card.years,1,100,1,'년')+'</div>'
           +'<div style="margin-top:6px"><label>현재 보유 (만원)</label>'+cardSlider(cid,'initAsset',card.initAsset,0,500000,1000,'만')+'</div>'
-          +'<div style="margin-top:6px"><label>월 적립 (만원)</label>'+cardSlider(cid,'monthly',card.monthly,10,10000,50,'만')+'</div>')
+          +'<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><label style="margin:0;min-width:60px">적립 주기</label><button onclick="toggleSavingMode('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingMode!=='annual'?'var(--accent)':'var(--border2)')+';border-radius:5px 0 0 5px;border-right:none;background:'+(card.savingMode!=='annual'?'var(--accent)':'transparent')+';color:'+(card.savingMode!=='annual'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">월</button><button onclick="toggleSavingMode('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingMode==='annual'?'var(--accent)':'var(--border2)')+';border-radius:0 5px 5px 0;background:'+(card.savingMode==='annual'?'var(--accent)':'transparent')+';color:'+(card.savingMode==='annual'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">연</button></div>'
+          +(card.savingMode==='annual'?'<div style="margin-top:4px;display:flex;align-items:center;gap:6px"><label style="margin:0;min-width:60px">적립 시점</label><button onclick="toggleSavingTiming('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingTiming==='start'?'var(--accent)':'var(--border2)')+';border-radius:5px 0 0 5px;border-right:none;background:'+(card.savingTiming==='start'?'var(--accent)':'transparent')+';color:'+(card.savingTiming==='start'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">연초</button><button onclick="toggleSavingTiming('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingTiming!=='start'?'var(--accent)':'var(--border2)')+';border-radius:0 5px 5px 0;background:'+(card.savingTiming!=='start'?'var(--accent)':'transparent')+';color:'+(card.savingTiming!=='start'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">연말</button></div>':'')
+          +'<div style="margin-top:6px"><label>'+(card.savingMode==='annual'?'연 적립 (만원)':'월 적립 (만원)')+'</label>'+cardSlider(cid,'monthly',card.monthly,card.savingMode==='annual'?100:10,card.savingMode==='annual'?120000:10000,card.savingMode==='annual'?500:50,'만')+'</div>')
       +'<div style="margin-top:6px;display:flex;align-items:center;gap:8px">'
         +'<label style="margin:0">증액저축</label>'
         +'<button onclick="toggleMonthlyGrowth('+cid+')" style="padding:3px 14px;font-size:11px;border:1px solid '+(card.monthlyGrowth?'var(--accent)':'var(--border2)')+';border-radius:5px;background:'+(card.monthlyGrowth?'var(--accent)':'transparent')+';color:'+(card.monthlyGrowth?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">'+(card.monthlyGrowth?'ON':'OFF')+'</button>'
@@ -959,29 +965,58 @@ function toggleMonthlyGrowth(cid){
   renderGoalCardsList();
   _autoGoals();
 }
+function toggleSavingMode(cid){
+  var card=goalCards.find(function(c){return c.id===cid;});
+  if(!card)return;
+  card.savingMode=card.savingMode==='annual'?'monthly':'annual';
+  renderGoalCardsList();
+  _autoGoals();
+}
+function toggleSavingTiming(cid){
+  var card=goalCards.find(function(c){return c.id===cid;});
+  if(!card)return;
+  card.savingTiming=card.savingTiming==='start'?'end':'start';
+  renderGoalCardsList();
+  _autoGoals();
+}
 
 // ══ CALC ══
-function calcDet(initAsset,monthly,years,nomRet,inflation,goalNow,incomeGrowth,startYear){
-  startYear=startYear||0;
+function calcDet(initAsset,monthly,years,nomRet,inflation,goalNow,incomeGrowth,startYear,savingMode,savingTiming){
+  startYear=startYear||0;savingMode=savingMode||'monthly';savingTiming=savingTiming||'end';
   const totalYears=startYear+years;
   const mr=nomRet/12,goalFV=goalNow*Math.pow(1+inflation,totalYears);
-  let asset=initAsset,contrib=initAsset,curMonthly=monthly;
+  let asset=initAsset,contrib=initAsset,curSaving=monthly;
   const yearData=[];
   for(let y=1;y<=totalYears;y++){
     const saving=y>startYear;
-    for(let m=0;m<12;m++)asset=asset*(1+mr)+(saving?curMonthly:0);
-    if(saving){contrib+=curMonthly*12;curMonthly*=(1+incomeGrowth);}
+    if(savingMode==='annual'){
+      if(savingTiming==='start'&&saving){asset+=curSaving;contrib+=curSaving;}
+      for(let m=0;m<12;m++)asset=asset*(1+mr);
+      if(savingTiming!=='start'&&saving){asset+=curSaving;contrib+=curSaving;}
+      if(saving)curSaving*=(1+incomeGrowth);
+    }else{
+      for(let m=0;m<12;m++)asset=asset*(1+mr)+(saving?curSaving:0);
+      if(saving){contrib+=curSaving*12;curSaving*=(1+incomeGrowth);}
+    }
     yearData.push({year:y,asset,contrib,gain:asset-contrib,goalFV:goalNow*Math.pow(1+inflation,y),achievePct:asset/(goalNow*Math.pow(1+inflation,y))*100});
   }
-  const r=mr,n=years*12;
-  const assetAtStart=initAsset*Math.pow(1+r,startYear*12);
-  const fac=n>0?(Math.pow(1+r,n)-1)/r*(1+r):1;
-  const needed=(goalFV-assetAtStart*Math.pow(1+r,n))/fac;
+  let needed;
+  if(savingMode==='annual'){
+    const ear=Math.pow(1+mr,12);
+    const assetAtStart=initAsset*Math.pow(ear,startYear);
+    const fac=years>0?(savingTiming==='start'?ear*(Math.pow(ear,years)-1)/(ear-1):(Math.pow(ear,years)-1)/(ear-1)):1;
+    needed=(goalFV-assetAtStart*Math.pow(ear,years))/fac;
+  }else{
+    const r=mr,n=years*12;
+    const assetAtStart=initAsset*Math.pow(1+r,startYear*12);
+    const fac=n>0?(Math.pow(1+r,n)-1)/r*(1+r):1;
+    needed=(goalFV-assetAtStart*Math.pow(1+r,n))/fac;
+  }
   return{yearData,finalAsset:asset,goalFV,surplus:asset-goalFV,achieved:asset>=goalFV,neededMonthly:needed};
 }
 
-function calcMC(initAsset,monthly,years,nomRet,inflation,goalNow,stdDev,runs,incomeGrowth,startYear){
-  startYear=startYear||0;
+function calcMC(initAsset,monthly,years,nomRet,inflation,goalNow,stdDev,runs,incomeGrowth,startYear,savingMode,savingTiming){
+  startYear=startYear||0;savingMode=savingMode||'monthly';savingTiming=savingTiming||'end';
   const totalYears=startYear+years;
   const mm=nomRet/12,ms=stdDev/Math.sqrt(12),goalFV=goalNow*Math.pow(1+inflation,totalYears),n=totalYears*12;
   const startMonth=startYear*12;
@@ -990,11 +1025,23 @@ function calcMC(initAsset,monthly,years,nomRet,inflation,goalNow,stdDev,runs,inc
   for(let i=0;i<runs;i++){
     let a=initAsset,cm=monthly;
     const p=i<sample?[initAsset]:null;
-    for(let m=0;m<n;m++){
-      const saving=m>=startMonth;
-      a=a*(1+mm+ms*randn())+(saving?cm:0);
-      if(saving&&(m-startMonth+1)%12===0)cm*=(1+incomeGrowth);
-      if(p&&(m+1)%12===0)p.push(a);
+    if(savingMode==='annual'){
+      for(let m=0;m<n;m++){
+        const saving=m>=startMonth;
+        const miy=saving?(m-startMonth)%12:-1;
+        if(savingTiming==='start'&&saving&&miy===0)a+=cm;
+        a=a*(1+mm+ms*randn());
+        if(savingTiming!=='start'&&saving&&miy===11)a+=cm;
+        if(saving&&miy===11)cm*=(1+incomeGrowth);
+        if(p&&(m+1)%12===0)p.push(a);
+      }
+    }else{
+      for(let m=0;m<n;m++){
+        const saving=m>=startMonth;
+        a=a*(1+mm+ms*randn())+(saving?cm:0);
+        if(saving&&(m-startMonth+1)%12===0)cm*=(1+incomeGrowth);
+        if(p&&(m+1)%12===0)p.push(a);
+      }
     }
     finals.push(a);if(p)paths.push(p);
   }
@@ -1035,12 +1082,12 @@ function runAllGoals(){
       const cardStartYear=card.startYear||0;
       const totalYears=cardStartYear+card.years;
       const futureHP=Math.round(hp*Math.pow(1+pr,totalYears)/100)*100;
-      det=calcDet(card.initAsset,card.monthly,card.years,cardRet,0,futureHP,cardGrowth,cardStartYear);
-      mc=calcMC(card.initAsset,card.monthly,card.years,cardRet,0,futureHP,cardStd,runs,cardGrowth,cardStartYear);
+      det=calcDet(card.initAsset,card.monthly,card.years,cardRet,0,futureHP,cardGrowth,cardStartYear,card.savingMode||'monthly',card.savingTiming||'end');
+      mc=calcMC(card.initAsset,card.monthly,card.years,cardRet,0,futureHP,cardStd,runs,cardGrowth,cardStartYear,card.savingMode||'monthly',card.savingTiming||'end');
       lastHousingEquity={det,mc,years:totalYears,housePrice:futureHP,housePriceNow:hp};
     } else {
-      det=calcDet(card.initAsset,card.monthly,card.years,cardRet,cardInf,card.amount,cardGrowth,card.startYear||0);
-      mc=calcMC(card.initAsset,card.monthly,card.years,cardRet,cardInf,card.amount,cardStd,runs,cardGrowth,card.startYear||0);
+      det=calcDet(card.initAsset,card.monthly,card.years,cardRet,cardInf,card.amount,cardGrowth,card.startYear||0,card.savingMode||'monthly',card.savingTiming||'end');
+      mc=calcMC(card.initAsset,card.monthly,card.years,cardRet,cardInf,card.amount,cardStd,runs,cardGrowth,card.startYear||0,card.savingMode||'monthly',card.savingTiming||'end');
     }
     card.result={det,mc};
   });
@@ -1167,7 +1214,7 @@ function buildGoalPanel(card){
   const startNote=card.startYear>0?' (준비시점 '+card.startYear+'년 후, 적립 '+card.years+'년)':'';
   return '<div class="result-msg">'
     +'<b>'+card.name+'</b> 목표 '+wan(card.amount)+' → '+totalYrs+'년 후 미래가치 <span style="'+c+';font-weight:700">'+wan(det.goalFV)+'</span>'+startNote+'<br>'
-    +'최종 예상: <b>'+wan(det.finalAsset)+'</b> <span style="'+c+';font-weight:700">'+verdictText+'</span> &nbsp;|&nbsp; 필요 월적립: <b style="color:var(--amber)">'+wan(det.neededMonthly)+'/월</b><br>'
+    +'최종 예상: <b>'+wan(det.finalAsset)+'</b> <span style="'+c+';font-weight:700">'+verdictText+'</span> &nbsp;|&nbsp; 필요 '+(card.savingMode==='annual'?'연':'월')+'적립: <b style="color:var(--amber)">'+wan(det.neededMonthly)+'/'+(card.savingMode==='annual'?'년':'월')+'</b><br>'
     +'몬테카를로 <b style="color:'+mcc+'">'+mc.runs+'회 중 '+mc.successCount+'번 성공 ('+mc.successRate.toFixed(1)+'%)</b> &nbsp; 중앙값: '+wan(mc.pct(50))+' &nbsp; 하위10%: '+wan(mc.pct(10))
     +'</div>'
     +'<div class="chart-wrap"><canvas id="gc-chart-'+card.id+'" class="chart-canvas" height="433"></canvas></div>';
