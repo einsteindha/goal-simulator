@@ -1099,7 +1099,7 @@ function renderGoalsTimeline(){
     det.yearData.forEach(d=>data[d.year]=d.asset/10000);
     datasets.push({label:card.name,data,borderColor:card.color,backgroundColor:card.color+'22',borderWidth:2,pointRadius:2,tension:.3,fill:false});
     // 목표선
-    const cardInf2=(card.inflation||2.5)/100;
+    const cardInf2=card.type==='housing'?(card.priceRise||3)/100:(card.inflation||2.5)/100;
     const cardTotalYrs=(card.startYear||0)+card.years;
     const goalData=Array(maxYears+1).fill(null);
     for(let y=0;y<=cardTotalYrs;y++)goalData[y]=card.amount*Math.pow(1+cardInf2,y)/10000;
@@ -1180,7 +1180,7 @@ function renderGoalPanelChart(id){
   const card=goalCards.find(function(c){return c.id===id;});
   if(!card||!card.result)return;
   const det=card.result.det,mc=card.result.mc;
-  const cardInflation=(card.inflation||2.5)/100;
+  const cardInflation=card.type==='housing'?(card.priceRise||3)/100:(card.inflation||2.5)/100;
   const cardTotalYrs=(card.startYear||0)+card.years;
   const labels=['현재'].concat(det.yearData.map(function(d){return d.year+'년';}));
   const goalData=Array.from({length:cardTotalYrs+1},function(_,i){return card.amount*Math.pow(1+cardInflation,i)/10000;});
