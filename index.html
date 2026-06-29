@@ -204,6 +204,17 @@ select option{background:var(--bg2)}
 #housing-content.income-warn .data-table{opacity:.25;pointer-events:none}
 #h-income-notice{display:none;margin:12px 0;padding:14px 16px;background:rgba(148,48,48,.08);border:1px solid rgba(148,48,48,.3);border-radius:var(--radius-lg);text-align:center}
 #h-income-notice.show{display:block}
+#up-income-section.income-warn{border-color:rgba(148,48,48,.5);background:rgba(148,48,48,.06)}
+#up-income-section.income-warn .section-title{color:var(--red)}
+#up-income-section.income-warn label{color:var(--red)}
+#up-income-section.income-warn input{border-color:rgba(148,48,48,.4);background:rgba(148,48,48,.06)}
+#up-content.income-warn .gauge-card,
+#up-content.income-warn .repay-card,
+#up-content.income-warn #up-summary,
+#up-content.income-warn .chart-wrap,
+#up-content.income-warn .data-table{opacity:.25;pointer-events:none}
+#up-income-notice{display:none;margin:12px 0;padding:14px 16px;background:rgba(148,48,48,.08);border:1px solid rgba(148,48,48,.3);border-radius:var(--radius-lg);text-align:center}
+#up-income-notice.show{display:block}
 /* 3방법 비교 패널 */
 .compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
 .compare-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:12px;position:relative;transition:border-color .2s}
@@ -236,13 +247,15 @@ select option{background:var(--bg2)}
   body.print-goals>*:not(#print-content){display:none!important}
   /* Housing tab: show only #print-content-h */
   body.print-housing>*:not(#print-content-h){display:none!important}
+  /* Upgrade tab: show only #print-content-u */
+  body.print-upgrade>*:not(#print-content-u){display:none!important}
   /* Other tabs: hide chrome */
-  body:not(.print-goals):not(.print-housing) .header,body:not(.print-goals):not(.print-housing) .nav-bar,body:not(.print-goals):not(.print-housing) .btn-run,body:not(.print-goals):not(.print-housing) .btn-sm,body:not(.print-goals):not(.print-housing) .btn-success,body:not(.print-goals):not(.print-housing) .hdr-btn{display:none!important}
-  body:not(.print-goals):not(.print-housing) .page{height:auto!important;overflow:visible!important}
-  body:not(.print-goals):not(.print-housing) .page:not(.print-show){display:none!important}
-  body:not(.print-goals):not(.print-housing) .page.print-show{display:flex!important}
-  body:not(.print-goals):not(.print-housing) .split-left{width:38%!important;flex-shrink:0!important;overflow:visible!important}
-  body:not(.print-goals):not(.print-housing) .split-right{overflow:visible!important}
+  body:not(.print-goals):not(.print-housing):not(.print-upgrade) .header,body:not(.print-goals):not(.print-housing):not(.print-upgrade) .nav-bar,body:not(.print-goals):not(.print-housing):not(.print-upgrade) .btn-run,body:not(.print-goals):not(.print-housing):not(.print-upgrade) .btn-sm,body:not(.print-goals):not(.print-housing):not(.print-upgrade) .btn-success,body:not(.print-goals):not(.print-housing):not(.print-upgrade) .hdr-btn{display:none!important}
+  body:not(.print-goals):not(.print-housing):not(.print-upgrade) .page{height:auto!important;overflow:visible!important}
+  body:not(.print-goals):not(.print-housing):not(.print-upgrade) .page:not(.print-show){display:none!important}
+  body:not(.print-goals):not(.print-housing):not(.print-upgrade) .page.print-show{display:flex!important}
+  body:not(.print-goals):not(.print-housing):not(.print-upgrade) .split-left{width:38%!important;flex-shrink:0!important;overflow:visible!important}
+  body:not(.print-goals):not(.print-housing):not(.print-upgrade) .split-right{overflow:visible!important}
   /* Common print IdentiFi header */
   .ph-logo-hdr{display:flex;align-items:center;gap:1rem;border-bottom:1px solid var(--border2);padding-bottom:.5rem;margin-bottom:1rem}
   .ph-logo{font-family:'DM Serif Display',serif;font-size:17px;font-weight:400;color:var(--text)}
@@ -291,6 +304,7 @@ select option{background:var(--bg2)}
 <div class="nav-bar">
   <button class="nav-btn active" onclick="switchPage('goals',this)">🎯 목적자금</button>
   <button class="nav-btn" onclick="switchPage('housing',this)">🏠 주택구입</button>
+  <button class="nav-btn" onclick="switchPage('upgrade',this)">🏡 주택 갈아타기</button>
   <button class="nav-btn" onclick="switchPage('gift',this)">🎁 증여/양도</button>
   <button class="nav-btn" onclick="switchPage('jeonsemont',this)">🏘️ 전세 vs 월세</button>
 </div>
@@ -432,6 +446,109 @@ select option{background:var(--bg2)}
       </div>
     </div>
     <div id="h-panel-burden" class="panel"><div id="h-burden-content"></div></div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ PAGE: 주택 갈아타기 ══════════ -->
+<div id="page-upgrade" class="page">
+<div class="split-left">
+
+  <div class="section">
+    <div class="section-title">목표 주택 정보 <span style="font-size:10px;color:var(--text3);font-weight:400">※ 취득세·중개수수료·이사비용 제외</span></div>
+    <div id="up-years-link" class="info-hint" style="margin-bottom:8px"></div>
+    <label>주택 매매가격 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)" id="up-target-time-lbl"></span></label>
+    <div class="input-unit"><input type="number" id="up-targetprice" oninput="_autoUpgrade();" value="80000" step="1000"><span class="unit">만원</span></div>
+    <label>자기자금 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 목표 시점 기준</span></label>
+    <div class="input-row" style="gap:8px;margin-bottom:0">
+      <div style="flex:1">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px">주택 처분금액</div>
+        <div class="input-unit"><input type="number" id="up-proceeds" oninput="_upEquityUpdate();_autoUpgrade();" value="0" step="500"><span class="unit">만원</span></div>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px">내 적립금</div>
+        <div class="input-unit"><input type="number" id="up-savings" oninput="_upEquityUpdate();_autoUpgrade();" value="0" step="500"><span class="unit">만원</span></div>
+      </div>
+    </div>
+    <div id="up-equity-box" class="info-hint" style="margin-top:5px"></div>
+    <label>지역 구분</label>
+    <select id="up-zone" onchange="_autoUpgrade();">
+      <option value="toher">토지거래허가구역 (토허제)</option>
+      <option value="speculate">투기지역 / 투기과열지구</option>
+      <option value="adjust" selected>조정대상지역</option>
+      <option value="normal">일반 지역</option>
+    </select>
+    <label>매수인 주택 보유</label>
+    <select id="up-htype" onchange="_autoUpgrade();">
+      <option value="replace" selected>1주택자 (갈아타기)</option>
+      <option value="first">무주택자</option>
+      <option value="multi">다주택자</option>
+    </select>
+  </div>
+
+  <div class="section" id="up-income-section">
+    <div class="section-title">소득 & 기존 부채</div>
+    <label>현재 연 소득 (만원)</label>
+    <div class="input-unit"><input type="number" id="up-income" oninput="_autoUpgrade();" value="0" step="100"><span class="unit">만원</span></div>
+    <div id="up-income-future-box" class="info-hint" style="margin-top:4px"></div>
+    <label>기존 주담대 월 상환 (만원) <span style="font-size:10px;font-weight:400;color:var(--text3)">— 신규 주담대 외</span></label>
+    <div class="input-unit"><input type="number" id="up-exist-m" oninput="_autoUpgrade();" value="0" step="5"><span class="unit">만원</span></div>
+    <label>기타 대출 연 원리금 (만원)</label>
+    <div class="input-unit"><input type="number" id="up-existdebt" oninput="_autoUpgrade();" value="0" step="100"><span class="unit">만원</span></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">신규 대출 조건</div>
+    <label>대출 금리 (연 %)</label>
+    <div class="range-row"><input type="range" id="up-newrate" min="1" max="10" step="0.05" value="4.5" oninput="sr(this,'up-newrate-v',2);_autoUpgrade();"><span class="range-val" id="up-newrate-v">4.50%</span></div>
+    <label style="margin-top:10px">스트레스 가산금리 (연 %)</label>
+    <div class="range-row"><input type="range" id="up-stress" min="0" max="3" step="0.05" value="0.38" oninput="sr(this,'up-stress-v',2);_autoUpgrade();"><span class="range-val" id="up-stress-v">0.38%</span></div>
+    <div class="info-hint">2024년 2단계 스트레스DSR 수도권 0.38%p</div>
+    <div class="input-row" style="margin-top:9px">
+      <div><label>대출 기간</label>
+        <div class="range-row">
+          <input type="range" id="up-newterm" min="1" max="50" step="1" value="30"
+            oninput="sr(this,'up-newterm-v',0,'년');document.getElementById('up-newterm-num').value=this.value;_autoUpgrade();">
+          <span class="range-val" id="up-newterm-v">30년</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+          <input type="number" id="up-newterm-num" value="30" min="1" max="50" step="1"
+            style="width:60px;padding:4px 6px;text-align:right;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;font-family:monospace"
+            oninput="var v=Math.min(50,Math.max(1,+this.value||30));document.getElementById('up-newterm').value=v;document.getElementById('up-newterm-v').textContent=v+'년';var el=document.getElementById('up-newterm');el.style.setProperty('--pct',((v-1)/49*100).toFixed(1)+'%');_autoUpgrade();"
+            onblur="if(!this.value||+this.value<1)this.value=1;else if(+this.value>50)this.value=50;">
+          <span style="font-size:11px;color:var(--text3)">년</span>
+        </div>
+      </div>
+      <div><label>혼합형 거치</label>
+        <select id="up-grace" onchange="_autoUpgrade();"><option value="0" selected>없음</option><option value="1">1년</option><option value="3">3년</option><option value="5">5년</option></select>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="split-right">
+  <div id="up-empty" class="placeholder"><div style="font-size:32px;opacity:.3">🏡</div><div style="font-size:13px">정보를 입력하면 자동 계산됩니다</div></div>
+  <div id="up-content" style="display:none">
+    <div id="up-income-notice"><span style="font-size:22px">💡</span><br><span style="font-size:13px;font-weight:700;color:var(--red)">연 소득을 입력해 주세요</span><br><span style="font-size:11px;color:var(--text2);margin-top:4px;display:block">DSR · 스트레스DSR · DTI 한도 계산에 소득이 필요합니다</span></div>
+    <div id="up-gauge-area" class="gauge-grid"></div>
+    <div id="up-summary" class="result-msg"></div>
+    <div id="up-repay-compare" class="repay-compare"></div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchUpTab('cash',this)">💸 현금흐름</button>
+      <button class="tab-btn" onclick="switchUpTab('amort',this)">📋 상환 스케줄</button>
+      <button class="tab-btn" onclick="switchUpTab('burden',this)">📊 부담 분석</button>
+    </div>
+    <div id="up-panel-cash" class="panel active">
+      <div class="chart-wrap"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><canvas id="up-chart-amort" class="chart-canvas" height="220"></canvas></div>
+      <div class="chart-wrap"><div class="chart-title">상환방식별 잔여 원금 추이</div><canvas id="up-chart-balance" class="chart-canvas" height="160"></canvas></div>
+    </div>
+    <div id="up-panel-amort" class="panel">
+      <div class="chart-wrap" style="padding:0;overflow:hidden">
+        <table class="data-table"><thead><tr><th>연도</th><th>연 원금</th><th>연 이자</th><th>연 합계</th><th>잔여원금</th><th>DSR점유</th></tr></thead>
+        <tbody id="up-amort-tbody"></tbody></table>
+      </div>
+    </div>
+    <div id="up-panel-burden" class="panel"><div id="up-burden-content"></div></div>
   </div>
 </div>
 </div>
@@ -666,6 +783,7 @@ const $=id=>document.getElementById(id);
 function debounce(fn,ms){let t;return function(){clearTimeout(t);t=setTimeout(fn,ms);};}
 const _autoGoals=debounce(function(){if(goalCards.length>0)runAllGoals();},400);
 const _autoHousing=debounce(runHousing,400);
+const _autoUpgrade=debounce(function(){runUpgrade();},400);
 const _autoJM=debounce(runJeonseMonth,400);
 const _autoGift=debounce(runGift,300);
 const fmt=(n,d=0)=>isFinite(n)?n.toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
@@ -693,13 +811,17 @@ function switchPage(name,btn){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   $('page-'+name).classList.add('active');btn.classList.add('active');
   _currentPage=name;
-  const show=(name==='goals'||name==='housing');
+  const show=(name==='goals'||name==='housing'||name==='upgrade');
   document.querySelectorAll('.header-right button').forEach(b=>b.style.display=show?'':'none');
   if(name==='housing'){
     setTimeout(function(){
       if(chartAmort){var cv=$('chart-amort'),w=cv.parentElement?cv.parentElement.clientWidth:0;if(w>0){chartAmort.options.aspectRatio=w/220;chartAmort.resize();}}
       if(chartBalance){var cv=$('chart-balance'),w=cv.parentElement?cv.parentElement.clientWidth:0;if(w>0){chartBalance.options.aspectRatio=w/160;chartBalance.resize();}}
     },50);
+  }
+  if(name==='upgrade'){
+    runUpgrade();
+    setTimeout(function(){if(chartUpgrade){var cv=$('chart-upgrade'),w=cv.parentElement?cv.parentElement.clientWidth:0;if(w>0){chartUpgrade.resize();}}},50);
   }
 }
 function switchHTab(name,btn){
@@ -723,30 +845,49 @@ const GOAL_TYPES={
   travel:{icon:'✈️',name:'여행/이벤트'},
   car:{icon:'🚗',name:'자동차 구입'},
   housing:{icon:'🏠',name:'주택 구입'},
+  upgrade:{icon:'🏡',name:'주택 갈아타기'},
   retire:{icon:'🏖️',name:'조기 은퇴 준비금'},
 };
 const PALETTE=['#c4933f','#2a7c6f','#b86e1a','#7c5cbf','#4a7c8a','#943030'];
 let goalCards=[];let gid=0;
 
 function addGoalCard(preset={}){
-  const id=++gid;
   const type=preset.type||'general';
+  if((type==='housing'||type==='upgrade')&&goalCards.some(c=>c.type===type)){
+    alert((type==='housing'?'주택 구입':'주택 갈아타기')+' 카드는 1개만 추가할 수 있습니다.');
+    return;
+  }
+  const id=++gid;
   const info=GOAL_TYPES[type];
+  const isUp=type==='upgrade';
   const card={
     id, type,
     name:preset.name||info.name,
     amount:preset.amount||5000,
     startYear:preset.startYear!==undefined?preset.startYear:0,
-    years:preset.years||10,
-    initAsset:preset.initAsset!==undefined?preset.initAsset:1000,
-    monthly:preset.monthly||30,
-    nomRet:preset.nomRet!==undefined?preset.nomRet:5,
+    years:preset.years||(isUp?12:10),
+    initAsset:preset.initAsset!==undefined?preset.initAsset:(isUp?5000:1000),
+    monthly:preset.monthly||(isUp?250:30),
+    nomRet:preset.nomRet!==undefined?preset.nomRet:(isUp?7:5),
     inflation:preset.inflation!==undefined?preset.inflation:2.5,
     stdDev:preset.stdDev!==undefined?preset.stdDev:8,
     monthlyGrowth:preset.monthlyGrowth||false,
     monthlyGrowthRate:preset.monthlyGrowthRate!==undefined?preset.monthlyGrowthRate:2,
     savingMode:preset.savingMode||'monthly',
     savingTiming:preset.savingTiming||'end',
+    // upgrade-specific
+    curHousePrice:preset.curHousePrice||50000,
+    curPriceRise:preset.curPriceRise||3,
+    loanBalance:preset.loanBalance!==undefined?preset.loanBalance:(isUp?10000:0),
+    loanRate:preset.loanRate||4,
+    loanStartY:preset.loanStartY||(isUp?(new Date().getFullYear()-8):(new Date().getFullYear()-3)),
+    loanStartM:preset.loanStartM||1,
+    loanTerm:preset.loanTerm||30,
+    loanEndMode:preset.loanEndMode||'term',
+    loanEndY:preset.loanEndY||(new Date().getFullYear()+27),
+    loanEndM:preset.loanEndM||1,
+    targetHousePrice:preset.targetHousePrice||(isUp?110000:80000),
+    targetPriceRise:preset.targetPriceRise||(isUp?4:3),
     color:PALETTE[(id-1)%PALETTE.length],
     result:null,
   };
@@ -767,8 +908,13 @@ function addGoalCard(preset={}){
 }
 
 function removeGoalCard(id){
+  var removed=goalCards.find(function(c){return c.id===id;});
   goalCards=goalCards.filter(c=>c.id!==id);
   renderedPanels.delete(id);
+  if(removed){
+    if(removed.type==='housing'){$('housing-empty').style.display='';$('housing-content').style.display='none';}
+    if(removed.type==='upgrade'){$('up-empty').style.display='';$('up-content').style.display='none';}
+  }
   renderGoalCardsList();
   _autoGoals();
 }
@@ -818,6 +964,15 @@ function renderGoalCardsList(){
         var fhp2=Math.round(hp2*Math.pow(1+pr2,totalYrs2)/100)*100;
         var le2=Math.max(0,fhp2-res.det.finalAsset);
         resHtml='<div class="gc-res-row" style="margin-top:8px;font-size:11px;padding:7px 10px;background:var(--bg3);border-radius:6px">예상 자기자금 <b style="color:'+rc+'">'+wan(res.det.finalAsset)+'</b> / 미래 매매가 <b>'+wan(fhp2)+'</b><br>예상 필요 대출: <b style="color:'+(le2>0?'var(--red)':'var(--green)')+'">'+( le2>0?wan(le2):'불필요')+'</b></div>';
+      } else if(card.type==='upgrade'){
+        var sp2=res.det.saleProceeds||0;
+        var sav2=res.det.savingsAccumulated||0;
+        var ftp2=res.det.futureTargetHP||0;
+        var ln2=res.det.loanNeeded||0;
+        resHtml='<div class="gc-res-row" style="margin-top:8px;font-size:11px;padding:7px 10px;background:var(--bg3);border-radius:6px">'
+          +'처분순자금 <b>'+wan(sp2)+'</b> + 적립 <b>'+wan(sav2)+'</b> = 총 자기자금 <b style="color:'+rc+'">'+wan(res.det.finalAsset)+'</b><br>'
+          +'목표 주택 미래가 <b>'+wan(ftp2)+'</b> / 필요 신규 대출: <b style="color:'+(ln2>0?'var(--red)':'var(--green)')+'">'+( ln2>0?wan(ln2):'불필요')+'</b>'
+          +'</div>';
       } else {
         resHtml='<div class="gc-res-row" style="margin-top:8px;font-size:11px;padding:7px 10px;background:var(--bg3);border-radius:6px">결정론적: <b style="color:'+rc+'">'+wan(res.det.finalAsset)+'</b> (목표 '+wan(res.det.goalFV)+') 몬테카를로 <b style="color:'+mc_c+'">'+res.mc.runs+'회 중 '+res.mc.successCount+'번 성공 ('+res.mc.successRate.toFixed(1)+'%)</b></div>';
       }
@@ -835,7 +990,50 @@ function renderGoalCardsList(){
       +'<div><label>유형</label><select data-cid="'+cid+'" data-key="type" onchange="updateCardFromSelect(this)">'+typeOpts+'</select></div>'
       +'<div><label>이름</label><input type="text" value="'+card.name+'" data-cid="'+cid+'" data-key="name" oninput="updateCardFromInput(this)"></div>'
       +'</div>'
-      +(card.type==='housing'
+      +(card.type==='upgrade'
+        ? // ── 현 주택
+          '<div style="margin-top:8px"><label>현 주택 현재가 (만원)</label>'+cardSlider(cid,'curHousePrice',card.curHousePrice||50000,1000,1000000,1000,'만')+'</div>'
+          +'<div style="margin-top:6px"><label>현 주택 연 가격상승률 (%)</label>'+cardSlider(cid,'curPriceRise',card.curPriceRise||3,0,15,0.5,'%')+'</div>'
+          +'<div style="margin-top:8px"><label>현재 대출 잔액 (만원)</label>'+cardSlider(cid,'loanBalance',card.loanBalance||0,0,500000,1000,'만')+'</div>'
+          +'<div style="margin-top:6px"><label>대출 이자율 (연 %)</label>'+cardSlider(cid,'loanRate',card.loanRate||4,0,15,0.1,'%')+'</div>'
+          +'<div style="margin-top:6px;display:flex;gap:12px">'
+            +'<div style="flex:1"><label>대출 실행일</label><div style="display:flex;align-items:center;gap:4px">'
+              +'<input type="number" value="'+(card.loanStartY||(new Date().getFullYear()-3))+'" min="1990" max="2050" step="1" data-cid="'+cid+'" data-key="loanStartY" oninput="updateCardFromInput(this)" style="width:58px;padding:3px 5px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;font-family:monospace">'
+              +'<span style="font-size:11px;color:var(--text3)">년</span>'
+              +'<input type="number" value="'+(card.loanStartM||1)+'" min="1" max="12" step="1" data-cid="'+cid+'" data-key="loanStartM" oninput="updateCardFromInput(this)" style="width:40px;padding:3px 5px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;font-family:monospace">'
+              +'<span style="font-size:11px;color:var(--text3)">월</span>'
+            +'</div></div>'
+            +(function(){var isT=(card.loanEndMode||'term')==='term';var iS='width:58px;padding:3px 5px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;font-family:monospace';var iSs='width:40px;padding:3px 5px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;font-family:monospace';
+              return '<div style="flex:1">'
+                +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+                  +'<label style="margin:0;min-width:60px">대출기간</label>'
+                  +'<button onclick="toggleLoanEndMode('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(isT?'var(--accent)':'var(--border2)')+';border-radius:5px 0 0 5px;border-right:none;background:'+(isT?'var(--accent)':'transparent')+';color:'+(isT?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">기간</button>'
+                  +'<button onclick="toggleLoanEndMode('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(!isT?'var(--accent)':'var(--border2)')+';border-radius:0 5px 5px 0;background:'+(!isT?'var(--accent)':'transparent')+';color:'+(!isT?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">만기일</button>'
+                +'</div>'
+                +'<div id="gc-lnt-box-'+cid+'" style="'+(isT?'display:flex':'display:none')+';align-items:center;gap:4px">'
+                  +'<input type="number" value="'+(card.loanTerm||30)+'" min="1" max="50" step="1" data-cid="'+cid+'" data-key="loanTerm" oninput="updateCardFromInput(this)" style="'+iS+'">'
+                  +'<span style="font-size:11px;color:var(--text3)">년</span>'
+                +'</div>'
+                +'<div id="gc-lnd-box-'+cid+'" style="'+(isT?'display:none':'display:flex')+';align-items:center;gap:4px">'
+                  +'<input type="number" value="'+(card.loanEndY||(new Date().getFullYear()+27))+'" min="1990" max="2080" step="1" data-cid="'+cid+'" data-key="loanEndY" oninput="updateCardFromInput(this)" style="'+iS+'">'
+                  +'<span style="font-size:11px;color:var(--text3)">년</span>'
+                  +'<input type="number" value="'+(card.loanEndM||1)+'" min="1" max="12" step="1" data-cid="'+cid+'" data-key="loanEndM" oninput="updateCardFromInput(this)" style="'+iSs+'">'
+                  +'<span style="font-size:11px;color:var(--text3)">월</span>'
+                +'</div>'
+              +'</div>';
+            })()
+          +'</div>'
+          // ── 목표 주택
+          +'<div style="margin-top:8px"><label>목표 주택 현재가 (만원)</label>'+cardSlider(cid,'targetHousePrice',card.targetHousePrice||80000,1000,1000000,1000,'만')+'</div>'
+          +'<div style="margin-top:6px"><label>목표 주택 연 가격상승률 (%)</label>'+cardSlider(cid,'targetPriceRise',card.targetPriceRise||3,0,15,0.5,'%')+'</div>'
+          +'<div style="margin-top:6px"><label>준비시점 (년) <span style="font-weight:400;color:var(--text3);font-size:10px">— 지금부터 몇 년 후 저축 시작 (0 = 즉시)</span></label>'+cardSlider(cid,'startYear',card.startYear||0,0,50,1,'년')+'</div>'
+          +'<div style="margin-top:6px"><label>목표 기간 (년) <span style="font-weight:400;color:var(--text3);font-size:10px">— 준비시점부터 갈아타기까지</span></label>'+cardSlider(cid,'years',card.years||10,1,50,1,'년')+'</div>'
+          // ── 저축/투자
+          +'<div style="margin-top:6px"><label>현재 추가 자금 (집 외, 만원)</label>'+cardSlider(cid,'initAsset',card.initAsset||0,0,200000,1000,'만')+'</div>'
+          +'<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><label style="margin:0;min-width:60px">적립 주기</label><button onclick="toggleSavingMode('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingMode!=='annual'?'var(--accent)':'var(--border2)')+';border-radius:5px 0 0 5px;border-right:none;background:'+(card.savingMode!=='annual'?'var(--accent)':'transparent')+';color:'+(card.savingMode!=='annual'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">월</button><button onclick="toggleSavingMode('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingMode==='annual'?'var(--accent)':'var(--border2)')+';border-radius:0 5px 5px 0;background:'+(card.savingMode==='annual'?'var(--accent)':'transparent')+';color:'+(card.savingMode==='annual'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">연</button></div>'
+          +(card.savingMode==='annual'?'<div style="margin-top:4px;display:flex;align-items:center;gap:6px"><label style="margin:0;min-width:60px">적립 시점</label><button onclick="toggleSavingTiming('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingTiming==='start'?'var(--accent)':'var(--border2)')+';border-radius:5px 0 0 5px;border-right:none;background:'+(card.savingTiming==='start'?'var(--accent)':'transparent')+';color:'+(card.savingTiming==='start'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">연초</button><button onclick="toggleSavingTiming('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.savingTiming!=='start'?'var(--accent)':'var(--border2)')+';border-radius:0 5px 5px 0;background:'+(card.savingTiming!=='start'?'var(--accent)':'transparent')+';color:'+(card.savingTiming!=='start'?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">연말</button></div>':'')
+          +'<div style="margin-top:6px"><label>'+(card.savingMode==='annual'?'연 적립 (만원)':'월 적립 (만원)')+'</label>'+cardSlider(cid,'monthly',card.monthly||100,card.savingMode==='annual'?100:10,card.savingMode==='annual'?120000:10000,card.savingMode==='annual'?500:50,'만')+'</div>'
+        : card.type==='housing'
         ? '<div style="margin-top:8px"><label>목표 주택 현재 매매가격 (만원)</label>'+cardSlider(cid,'housePrice',card.housePrice||card.amount,5000,1000000,1000,'만')+'</div>'
           +'<div style="margin-top:6px"><label>준비시점 (년) <span style="font-weight:400;color:var(--text3);font-size:10px">— 지금부터 몇 년 후 저축 시작 (0 = 즉시)</span></label>'+cardSlider(cid,'startYear',card.startYear||0,0,50,1,'년')+'</div>'
           +'<div style="margin-top:6px"><label>목표 기간 (년) <span style="font-weight:400;color:var(--text3);font-size:10px">— 준비시점부터 적립 기간</span></label>'+cardSlider(cid,'years',card.years,1,100,1,'년')+'</div>'
@@ -852,7 +1050,11 @@ function renderGoalCardsList(){
           +'<div style="margin-top:6px"><label>'+(card.savingMode==='annual'?'연 적립 (만원)':'월 적립 (만원)')+'</label>'+cardSlider(cid,'monthly',card.monthly,card.savingMode==='annual'?100:10,card.savingMode==='annual'?120000:10000,card.savingMode==='annual'?500:50,'만')+'</div>')
       +'<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><label style="margin:0;min-width:60px">증액저축</label><button onclick="toggleMonthlyGrowth('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(!card.monthlyGrowth?'var(--accent)':'var(--border2)')+';border-radius:5px 0 0 5px;border-right:none;background:'+(!card.monthlyGrowth?'var(--accent)':'transparent')+';color:'+(!card.monthlyGrowth?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">OFF</button><button onclick="toggleMonthlyGrowth('+cid+')" style="padding:3px 11px;font-size:11px;border:1px solid '+(card.monthlyGrowth?'var(--accent)':'var(--border2)')+';border-radius:0 5px 5px 0;background:'+(card.monthlyGrowth?'var(--accent)':'transparent')+';color:'+(card.monthlyGrowth?'#fff':'var(--text2)')+';cursor:pointer;font-family:inherit;font-weight:600">ON</button></div>'
       +(card.monthlyGrowth?'<div style="margin-top:4px"><label>연 증액률 (%)</label>'+cardSlider(cid,'monthlyGrowthRate',card.monthlyGrowthRate||2,0,15,0.5,'%')+'</div>':'')
-      +(card.type==='housing'
+      +(card.type==='upgrade'
+        ? '<div style="margin-top:8px"><label>기대 연 수익률 (적립금, %)</label>'+cardSlider(cid,'nomRet',card.nomRet||4,0,20,0.5,'%')+'</div>'
+          +'<div style="margin-top:6px"><label>표준편차 — MC변동성 (%)</label>'+cardSlider(cid,'stdDev',card.stdDev||5,0,30,0.5,'%')+'</div>'
+          +'<div style="margin-top:3px;font-size:10px;color:var(--text3)">무위험자산(예금·국채 등)은 0 입력 · 그 외는 백테스트 또는 CFP 상담으로 도출</div>'
+        : card.type==='housing'
         ? '<div style="margin-top:8px"><label>기대 연 수익률 (%)</label>'+cardSlider(cid,'nomRet',card.nomRet,0,20,0.5,'%')+'</div>'
           +'<div style="margin-top:6px"><label>표준편차 — MC변동성 (%)</label>'+cardSlider(cid,'stdDev',card.stdDev,0,30,0.5,'%')+'</div>'
           +'<div style="margin-top:3px;font-size:10px;color:var(--text3)">무위험자산(예금·국채 등)은 0 입력 · 그 외는 백테스트 또는 CFP 상담으로 도출</div>'
@@ -861,7 +1063,7 @@ function renderGoalCardsList(){
           +'<div style="margin-top:6px"><label>표준편차 — MC변동성 (%)</label>'+cardSlider(cid,'stdDev',card.stdDev,0,30,0.5,'%')+'</div>'
           +'<div style="margin-top:3px;font-size:10px;color:var(--text3)">무위험자산(예금·국채 등)은 0 입력 · 그 외는 백테스트 또는 CFP 상담으로 도출</div>'
           +'<div style="margin-top:8px"><label>연 물가상승률 (%)</label>'+cardSlider(cid,'inflation',card.inflation,0,10,0.5,'%')+'</div>')
-      +(card.type==='housing'
+      +(card.type==='housing'||card.type==='upgrade'
         ? '<div id="re-panel-'+cid+'" style="margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px"><!-- lazy --></div>'
         : '')
       +'<div id="gcr-'+cid+'">'+resHtml+'</div>'
@@ -874,7 +1076,7 @@ function renderGoalCardsList(){
     if(b) b.classList.add('open');
   });
   goalCards.forEach(function(card){
-    if(card.type==='housing'){
+    if(card.type==='housing'||card.type==='upgrade'){
       var p=document.getElementById('re-panel-'+card.id);
       if(p&&(p.innerHTML==='<!-- lazy -->'||p.innerHTML==='')) p.innerHTML=buildMiniReTable(card.id);
     }
@@ -898,7 +1100,17 @@ function updateGoalCardResults(){
       var totalYrs2=(card.startYear||0)+card.years;
       var fhp2=Math.round(hp2*Math.pow(1+pr2,totalYrs2)/100)*100;
       var le2=Math.max(0,fhp2-res.det.finalAsset);
-      resEl.innerHTML='<div style="margin-top:8px;font-size:11px;padding:7px 10px;background:var(--bg3);border-radius:6px">예상 자기자금 <b style="color:'+rc+'">'+wan(res.det.finalAsset)+'</b> / 미래 매매가 <b>'+wan(fhp2)+'</b><br>예상 필요 대출: <b style="color:'+(le2>0?'var(--red)':'var(--green)')+'">'+(le2>0?wan(le2):'불필요')+'</b></div>';
+      resEl.innerHTML='<div style="margin-top:8px;font-size:11px;padding:7px 10px;background:var(--bg3);border-radius:6px">미래 매매가 <b>'+wan(fhp2)+'</b><br>예상 자기자금 <b style="color:'+rc+'">'+wan(res.det.finalAsset)+'</b><br>예상 필요 대출: <b style="color:'+(le2>0?'var(--red)':'var(--green)')+'">'+(le2>0?wan(le2):'불필요')+'</b></div>';
+    } else if(card.type==='upgrade'){
+      var sp2=res.det.saleProceeds||0,sav2=res.det.savingsAccumulated||0;
+      var ftp2=res.det.futureTargetHP||0,ln2=res.det.loanNeeded||0;
+      var lnMC10=res.mc&&res.mc.pct?Math.max(0,ftp2-(res.mc.pct(10)+sp2)):null;
+      resEl.innerHTML='<div style="margin-top:8px;font-size:11px;padding:7px 10px;background:var(--bg3);border-radius:6px">'
+        +'목표 주택 미래가 <b>'+wan(ftp2)+'</b><br>'
+        +'총 자기자금 <b style="color:'+rc+'">'+wan(res.det.finalAsset)+'</b> (처분순자금 <b>'+wan(sp2)+'</b> + 적립 <b>'+wan(sav2)+'</b>)<br>'
+        +'필요 신규 대출: <b style="color:'+(ln2>0?'var(--red)':'var(--green)')+'">'+( ln2>0?wan(ln2):'불필요')+'</b>'
+        +(lnMC10!==null?' / MC 하위10% 기준: <b style="color:var(--amber)">'+wan(lnMC10)+'</b>':'')
+        +'</div>';
     } else {
       resEl.innerHTML='<div style="margin-top:8px;font-size:11px;padding:7px 10px;background:var(--bg3);border-radius:6px">결정론적: <b style="color:'+rc+'">'+wan(res.det.finalAsset)+'</b> (목표 '+wan(res.det.goalFV)+') 몬테카를로 <b style="color:'+mc_c+'">'+res.mc.runs+'회 중 '+res.mc.successCount+'번 성공 ('+res.mc.successRate.toFixed(1)+'%)</b></div>';
     }
@@ -908,7 +1120,33 @@ function updateGoalCardResults(){
 }
 function updateCardFromSelect(el){
   var cid=+el.getAttribute('data-cid'),key=el.getAttribute('data-key');
+  if(key==='type'){
+    var newType=el.value;
+    if(newType==='housing'||newType==='upgrade'){
+      var already=goalCards.some(function(c){return c.id!==cid&&c.type===newType;});
+      if(already){
+        alert((newType==='housing'?'주택 구입':'주택 갈아타기')+' 카드는 1개만 추가할 수 있습니다.');
+        var card=goalCards.find(function(c){return c.id===cid;});
+        if(card) el.value=card.type;
+        return;
+      }
+    }
+  }
   updateCard(cid,key,el.value);
+}
+function _getLoanEnd(card){
+  if((card.loanEndMode||'term')==='term'){
+    var sY=card.loanStartY||(new Date().getFullYear()-3),sM=card.loanStartM||1,t=card.loanTerm||30;
+    return{endY:sY+t,endM:sM};
+  }
+  return{endY:card.loanEndY||(new Date().getFullYear()+27),endM:card.loanEndM||1};
+}
+function toggleLoanEndMode(cid){
+  var card=goalCards.find(function(c){return c.id===cid;});
+  if(!card)return;
+  card.loanEndMode=(card.loanEndMode||'term')==='term'?'date':'term';
+  renderGoalCardsList();
+  _autoGoals();
 }
 function updateCardFromInput(el){
   var cid=+el.getAttribute('data-cid'),key=el.getAttribute('data-key');
@@ -937,7 +1175,7 @@ function toggleCard(id){
   body.classList.toggle('open');
   if(body.classList.contains('open')){
     const card=goalCards.find(function(c){return c.id===id;});
-    if(card&&card.type==='housing'){
+    if(card&&(card.type==='housing'||card.type==='upgrade')){
       const p=document.getElementById('re-panel-'+id);
       if(p&&(p.innerHTML==='<!-- lazy -->'||p.innerHTML==='')) p.innerHTML=buildMiniReTable(id);
     }
@@ -947,9 +1185,31 @@ function updateCard(id,key,val){
   const card=goalCards.find(function(c){return c.id===id;});
   if(!card)return;
   card[key]=val;
+  if(card.type==='upgrade'){
+    if(key==='loanBalance'&&card.loanBalance>(card.curHousePrice||0))card.loanBalance=card.curHousePrice||0;
+    if(key==='curHousePrice'&&(card.loanBalance||0)>val)card.loanBalance=val;
+    if(key==='loanBalance'||key==='curHousePrice'){
+      var capped=card.loanBalance||0;
+      var sl=document.getElementById('cs-'+id+'-loanBalance');
+      var ni=document.getElementById('cn-'+id+'-loanBalance');
+      var pv=document.getElementById('cp-'+id+'-loanBalance');
+      if(sl){sl.value=capped;var mn=parseFloat(sl.min),mx=parseFloat(sl.max);sl.style.setProperty('--pct',((capped-mn)/(mx-mn)*100).toFixed(1)+'%');}
+      if(ni)ni.value=capped;
+      if(pv)pv.textContent=csPreviewText(capped,'만');
+    }
+  }
   if(key==='type'){
     card.name=GOAL_TYPES[val].name;
-    if(val==='retire') card.result=null; // 결과 초기화
+    if(val==='retire') card.result=null;
+    if(val==='upgrade'){
+      card.years=12;card.initAsset=5000;card.monthly=250;card.nomRet=7;card.stdDev=8;
+      card.monthlyGrowth=false;card.savingMode='monthly';
+      card.curHousePrice=50000;card.curPriceRise=3;
+      card.loanBalance=10000;card.loanRate=4;
+      card.loanStartY=new Date().getFullYear()-8;card.loanStartM=1;
+      card.loanTerm=30;card.loanEndMode='term';
+      card.targetHousePrice=110000;card.targetPriceRise=4;card.startYear=0;
+    }
     renderGoalCardsList();
     _autoGoals();
   }
@@ -1082,6 +1342,24 @@ function runAllGoals(){
       det=calcDet(card.initAsset,card.monthly,card.years,cardRet,0,futureHP,cardGrowth,cardStartYear,card.savingMode||'monthly',card.savingTiming||'end');
       mc=calcMC(card.initAsset,card.monthly,card.years,cardRet,0,futureHP,cardStd,runs,cardGrowth,cardStartYear,card.savingMode||'monthly',card.savingTiming||'end');
       lastHousingEquity={det,mc,years:totalYears,housePrice:futureHP,housePriceNow:hp};
+    } else if(card.type==='upgrade'){
+      const cardStartYear=card.startYear||0;
+      const totalYears=cardStartYear+card.years;
+      const totalMonths=totalYears*12;
+      const futureCurHP=Math.round((card.curHousePrice||50000)*Math.pow(1+(card.curPriceRise||3)/100,totalYears)/100)*100;
+      const futureTargetHP=Math.round((card.targetHousePrice||80000)*Math.pow(1+(card.targetPriceRise||3)/100,totalYears)/100)*100;
+      const _le=_getLoanEnd(card);
+      const remBal=(card.loanBalance||0)>0
+        ?remainingLoanBal(card.loanBalance,card.loanRate||4,card.loanStartY||(new Date().getFullYear()-3),card.loanStartM||1,_le.endY,_le.endM,totalMonths)
+        :0;
+      const saleProceeds=Math.max(0,futureCurHP-remBal);
+      const gap=Math.max(0,futureTargetHP-saleProceeds);
+      const savDet=calcDet(card.initAsset||0,card.monthly||100,card.years,cardRet,0,gap,cardGrowth,cardStartYear,card.savingMode||'monthly',card.savingTiming||'end');
+      const savingsAccumulated=savDet.finalAsset;
+      const totalSelf=savingsAccumulated+saleProceeds;
+      const loanNeeded=Math.max(0,futureTargetHP-totalSelf);
+      det={...savDet,finalAsset:totalSelf,goalFV:futureTargetHP,achieved:totalSelf>=futureTargetHP,surplus:totalSelf-futureTargetHP,saleProceeds,remainBal:remBal,futureCurHP,futureTargetHP,savingsAccumulated,loanNeeded};
+      mc=calcMC(card.initAsset||0,card.monthly||100,card.years,cardRet,0,gap,cardStd,runs,cardGrowth,cardStartYear,card.savingMode||'monthly',card.savingTiming||'end');
     } else {
       det=calcDet(card.initAsset,card.monthly,card.years,cardRet,cardInf,card.amount,cardGrowth,card.startYear||0,card.savingMode||'monthly',card.savingTiming||'end');
       mc=calcMC(card.initAsset,card.monthly,card.years,cardRet,cardInf,card.amount,cardStd,runs,cardGrowth,card.startYear||0,card.savingMode||'monthly',card.savingTiming||'end');
@@ -1117,6 +1395,9 @@ function runAllGoals(){
   $('goals-content').style.display='block';
   updateFutureIncome();
   _disablePrintBtn();
+  // 연동 탭 자동 갱신
+  if(_currentPage==='housing')runHousing();else _autoHousing();
+  if(_currentPage==='upgrade')runUpgrade();else _autoUpgrade();
 }
 
 function renderGoalsDashboard(){
@@ -1139,14 +1420,35 @@ function renderGoalsTimeline(){
     if(!card.result)return;
     const det=card.result.det;
     const data=Array(maxYears+1).fill(null);
-    data[0]=card.initAsset/10000;
-    det.yearData.forEach(d=>data[d.year]=d.asset/10000);
+    const cardTotalYrs=(card.startYear||0)+card.years;
+    if(card.type==='upgrade'){
+      const chp=card.curHousePrice||50000,cpr=(card.curPriceRise||3)/100,clb=card.loanBalance||0;
+      const clr=card.loanRate||4,lsY=card.loanStartY||(new Date().getFullYear()-3),lsM=card.loanStartM||1;
+      const _le2=_getLoanEnd(card),leY=_le2.endY,leM=_le2.endM;
+      data[0]=(card.initAsset+Math.max(0,chp-clb))/10000;
+      det.yearData.forEach(d=>{
+        const hpY=Math.round(chp*Math.pow(1+cpr,d.year)/100)*100;
+        const remY=clb>0?remainingLoanBal(clb,clr,lsY,lsM,leY,leM,d.year*12):0;
+        data[d.year]=(d.asset+Math.max(0,hpY-remY))/10000;
+      });
+    } else {
+      data[0]=card.initAsset/10000;
+      det.yearData.forEach(d=>data[d.year]=d.asset/10000);
+    }
     datasets.push({label:card.name,data,borderColor:card.color,backgroundColor:card.color+'22',borderWidth:2,pointRadius:2,tension:.3,fill:false});
     // 목표선
-    const cardInf2=card.type==='housing'?(card.priceRise||3)/100:(card.inflation||2.5)/100;
-    const cardTotalYrs=(card.startYear||0)+card.years;
     const goalData=Array(maxYears+1).fill(null);
-    for(let y=0;y<=cardTotalYrs;y++)goalData[y]=card.amount*Math.pow(1+cardInf2,y)/10000;
+    if(card.type==='housing'){
+      const cardInf2=(card.priceRise||3)/100;
+      for(let y=0;y<=cardTotalYrs;y++)goalData[y]=card.amount*Math.pow(1+cardInf2,y)/10000;
+    } else if(card.type==='upgrade'){
+      const tpr2=(card.targetPriceRise||3)/100;
+      const thp2=card.targetHousePrice||80000;
+      for(let y=0;y<=cardTotalYrs;y++)goalData[y]=Math.round(thp2*Math.pow(1+tpr2,y)/100)*100/10000;
+    } else {
+      const cardInf2=(card.inflation||2.5)/100;
+      for(let y=0;y<=cardTotalYrs;y++)goalData[y]=card.amount*Math.pow(1+cardInf2,y)/10000;
+    }
     datasets.push({label:card.name+' 목표',data:goalData,borderColor:card.color,borderWidth:1,borderDash:[4,3],pointRadius:0,fill:false,tension:.3});
   });
   if(chartTimeline)chartTimeline.destroy();
@@ -1207,6 +1509,20 @@ function buildGoalPanel(card){
       +'</div>'
       +'<div class="chart-wrap"><canvas id="gc-chart-'+card.id+'" class="chart-canvas" height="433"></canvas></div>';
   }
+  if(card.type==='upgrade'){
+    const sp=det.saleProceeds||0,sa=det.savingsAccumulated||0;
+    const ftp=det.futureTargetHP||0,ln=det.loanNeeded||0;
+    const startNote=card.startYear>0?' (준비시점 '+card.startYear+'년 후, 적립 '+card.years+'년)':'';
+    const loanMC10=Math.max(0,ftp-(mc.pct(10)+sp));
+    return '<div class="result-msg">'
+      +'<b>'+card.name+'</b>'+startNote+'<br>'
+      +'현 주택 미래가 <b>'+wan(det.futureCurHP||0)+'</b> — 잔여 대출 <b style="color:var(--amber)">'+wan(det.remainBal||0)+'</b> = 처분순자금 <b>'+wan(sp)+'</b><br>'
+      +'목표 주택 미래가 <b>'+wan(ftp)+'</b> / 총 자기자금: <b style="'+c+'">'+wan(det.finalAsset)+'</b> (적립 '+wan(sa)+')<br>'
+      +'필요 신규 대출: <b style="color:'+(ln>0?'var(--red)':'var(--green)')+'">'+( ln>0?wan(ln):'불필요')+'</b>'
+      +' / MC 하위10% 기준 대출: <b style="color:var(--amber)">'+wan(loanMC10)+'</b>'
+      +'</div>'
+      +'<div class="chart-wrap"><canvas id="gc-chart-'+card.id+'" class="chart-canvas" height="433"></canvas></div>';
+  }
   const verdictText=det.achieved?'✓ 달성':'✗ '+wan(Math.abs(det.surplus))+' 부족';
   const startNote=card.startYear>0?' (준비시점 '+card.startYear+'년 후, 적립 '+card.years+'년)':'';
   return '<div class="result-msg">'
@@ -1224,25 +1540,45 @@ function renderGoalPanelChart(id){
   const card=goalCards.find(function(c){return c.id===id;});
   if(!card||!card.result)return;
   const det=card.result.det,mc=card.result.mc;
-  const cardInflation=card.type==='housing'?(card.priceRise||3)/100:(card.inflation||2.5)/100;
   const cardTotalYrs=(card.startYear||0)+card.years;
   const labels=['현재'].concat(det.yearData.map(function(d){return d.year+'년';}));
-  const goalData=Array.from({length:cardTotalYrs+1},function(_,i){return card.amount*Math.pow(1+cardInflation,i)/10000;});
+  var goalData;
+  if(card.type==='housing'){
+    const pr=(card.priceRise||3)/100;
+    goalData=Array.from({length:cardTotalYrs+1},function(_,i){return (card.housePrice||card.amount)*Math.pow(1+pr,i)/10000;});
+  } else if(card.type==='upgrade'){
+    const tpr=(card.targetPriceRise||3)/100;
+    const thp=card.targetHousePrice||80000;
+    goalData=Array.from({length:cardTotalYrs+1},function(_,i){return Math.round(thp*Math.pow(1+tpr,i)/100)*100/10000;});
+  } else {
+    const inf=(card.inflation||2.5)/100;
+    goalData=Array.from({length:cardTotalYrs+1},function(_,i){return card.amount*Math.pow(1+inf,i)/10000;});
+  }
+  // upgrade: 연도별 현 주택 순자산(집값 − 잔여대출) 계산
+  var houseEquityByYear=null;
+  if(card.type==='upgrade'){
+    houseEquityByYear=Array.from({length:cardTotalYrs+1},function(_,i){
+      var fhp=Math.round((card.curHousePrice||50000)*Math.pow(1+(card.curPriceRise||3)/100,i)/100)*100;
+      var _le3=_getLoanEnd(card);var rb=(card.loanBalance||0)>0?remainingLoanBal(card.loanBalance,card.loanRate||4,card.loanStartY||(new Date().getFullYear()-3),card.loanStartM||1,_le3.endY,_le3.endM,i*12):0;
+      return Math.max(0,fhp-rb);
+    });
+  }
+  const initForChart=card.type==='upgrade'?((card.initAsset||0)+(houseEquityByYear[0]||0)):(card.initAsset||0);
   var _gcEl=$('gc-chart-'+id); if(!_gcEl)return;
   const _pSY=card.startYear||0;
   new Chart(_gcEl,{
     type:'line',
     data:{labels:labels,datasets:[
-      {label:'MC 하위10%',data:[card.initAsset/10000].concat(mc.path10.map(function(v){return v/10000;})),
+      {label:'MC 하위10%',data:[initForChart/10000].concat(mc.path10.map(function(v,i){return (v+(houseEquityByYear?houseEquityByYear[i+1]:0))/10000;})),
         borderColor:'rgba(196,147,63,.3)',backgroundColor:'rgba(196,147,63,.08)',
         borderWidth:1,borderDash:[2,2],pointRadius:0,fill:'origin',tension:.3},
-      {label:'MC 상위10%',data:[card.initAsset/10000].concat(mc.path90.map(function(v){return v/10000;})),
+      {label:'MC 상위10%',data:[initForChart/10000].concat(mc.path90.map(function(v,i){return (v+(houseEquityByYear?houseEquityByYear[i+1]:0))/10000;})),
         borderColor:'rgba(196,147,63,.3)',backgroundColor:'rgba(196,147,63,.08)',
         borderWidth:1,borderDash:[2,2],pointRadius:0,fill:'-1',tension:.3},
-      {label:'MC 중앙값',data:[card.initAsset/10000].concat(mc.path50.map(function(v){return v/10000;})),
+      {label:'MC 중앙값',data:[initForChart/10000].concat(mc.path50.map(function(v,i){return (v+(houseEquityByYear?houseEquityByYear[i+1]:0))/10000;})),
         borderColor:'#9a9080',backgroundColor:'transparent',
         borderWidth:1.5,borderDash:[4,2],pointRadius:0,fill:false,tension:.3},
-      {label:'결정론적',data:[card.initAsset/10000].concat(det.yearData.map(function(d){return d.asset/10000;})),
+      {label:'결정론적',data:[initForChart/10000].concat(det.yearData.map(function(d){return (d.asset+(houseEquityByYear?houseEquityByYear[d.year]:0))/10000;})),
         borderColor:card.color,backgroundColor:'transparent',
         borderWidth:2.5,pointRadius:3,fill:false,tension:.3},
       {label:'목표(FV)',data:goalData,
@@ -1269,11 +1605,182 @@ function renderFirstGoalChart(){
 }
 
 // ══════════════════════════════════
+// UPGRADE (주택 갈아타기)
+// ══════════════════════════════════
+let chartUpgrade=null,chartUpAmort=null,chartUpBalance=null;
+function switchUpTab(name,btn){
+  ['cash','amort','burden'].forEach(function(n){var p=$('up-panel-'+n);if(p)p.classList.remove('active');});
+  var panel=$('up-panel-'+name);if(panel)panel.classList.add('active');
+  btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  if(name==='curloan'&&chartUpgrade)setTimeout(function(){chartUpgrade.resize();},30);
+  if(name==='cash'){if(chartUpAmort)setTimeout(function(){chartUpAmort.resize();},30);if(chartUpBalance)setTimeout(function(){chartUpBalance.resize();},30);}
+}
+function _upEquityUpdate(){
+  var p=+($('up-proceeds')||{}).value||0,s=+($('up-savings')||{}).value||0;
+  var box=$('up-equity-box');
+  if(box)box.textContent='자기자금 합계 '+wan(p+s);
+}
+function runUpgrade(){
+  // 갈아타기 시점: 목적자금 탭 갈아타기 카드에서 자동 연동
+  var uc=goalCards.find(function(c){return c.type==='upgrade';});
+  var years=uc?((uc.startYear||0)+(uc.years||10)):0;
+  var yearsLinkBox=$('up-years-link');
+  if(!uc){
+    $('up-empty').style.display='';$('up-content').style.display='none';
+    if(yearsLinkBox)yearsLinkBox.innerHTML='<span style="color:var(--amber)">⚠ 목적자금 탭에 갈아타기 카드를 추가하면 시점이 자동 연동됩니다</span>';
+    return;
+  }
+  if(yearsLinkBox){
+    yearsLinkBox.innerHTML='📌 목적자금 탭 연동 — 갈아타기 시점 <b>'+(uc.startYear>0?uc.startYear+'년 후 시작 · ':'')+(uc.years||10)+'년 준비</b> = <b style="color:var(--blue)">총 '+years+'년 후</b>';
+  }
+  // 목적자금 카드 계산값 자동 반영
+  var ucDet=uc.result?uc.result.det:null;
+  if(ucDet){
+    if(ucDet.futureTargetHP){var el=$('up-targetprice');if(el)el.value=Math.round(ucDet.futureTargetHP);}
+    var el2=$('up-proceeds');if(el2)el2.value=Math.round(ucDet.saleProceeds||0);
+    var el3=$('up-savings');if(el3)el3.value=Math.round(ucDet.savingsAccumulated||0);
+  }
+  var timeLbl=$('up-target-time-lbl');
+  if(timeLbl)timeLbl.textContent='— '+years+'년 후 기준';
+  var targetPrice=+($('up-targetprice')||{}).value||80000;
+  var proceeds=+($('up-proceeds')||{}).value||0;
+  var savings=+($('up-savings')||{}).value||0;
+  var deposit=0;
+  var zone=($('up-zone')||{}).value||'adjust';
+  var htype=($('up-htype')||{}).value||'replace';
+  var incomeNow=+($('up-income')||{}).value||0;
+  var exM=+($('up-exist-m')||{}).value||0;
+  var exO=+($('up-existdebt')||{}).value||0;
+  var rate=parseFloat(($('up-newrate')||{}).value||4.5)/100;
+  var stress=parseFloat(($('up-stress')||{}).value||0.38)/100;
+  var term=+($('up-newterm')||{}).value||30;
+  var grace=+($('up-grace')||{}).value||0;
+
+  _upEquityUpdate();
+
+  var noIncome=(incomeNow===0);
+  var incSec=$('up-income-section'),upCont=$('up-content'),notice=$('up-income-notice');
+  $('up-empty').style.display='none';$('up-content').style.display='block';
+  if(incSec)incSec.classList.toggle('income-warn',noIncome);
+  if(upCont)upCont.classList.toggle('income-warn',noIncome);
+  if(notice)notice.classList.toggle('show',noIncome);
+
+  const incomeGrowth=parseFloat($('g-income-growth').value)/100||0.02;
+  const income=Math.round(incomeNow*Math.pow(1+incomeGrowth,years)/100)*100;
+  var incFutBox=$('up-income-future-box');
+  if(incFutBox)incFutBox.textContent=incomeNow>0?(years+'년 후 예상 소득: '+wan(income)+' (성장률 '+(incomeGrowth*100).toFixed(1)+'%/년)'):'';
+
+  if(noIncome)return;
+
+  const equity=proceeds+savings;
+  const loanNeed=Math.max(0,targetPrice-equity-deposit);
+  const ltvLim=LTV[zone][htype];
+  const ltvMax=Math.max(0,targetPrice*ltvLim/100-deposit);
+  const ltvAct=(loanNeed+deposit)/targetPrice*100;
+
+  const existAnn=exM*12+exO;
+  const mr=rate/12,n12=term*12,f=(Math.pow(1+mr,n12)-1)/(mr*Math.pow(1+mr,n12));
+  const dsrMax=Math.max(0,(income*.4-existAnn)/12*f);
+  const sr2=rate+stress,smr=sr2/12,sf=(Math.pow(1+smr,n12)-1)/(smr*Math.pow(1+smr,n12));
+  const stMax=Math.max(0,(income*.4-existAnn)/12*sf);
+  const dtiLim=zone==='speculate'?40:zone==='adjust'?50:60;
+  const finalLoan=Math.min(loanNeed,ltvMax,dsrMax,stMax);
+  const shortfall=loanNeed-finalLoan;
+
+  const newPI=api(finalLoan,rate,term);
+  const dsrAct=(newPI+existAnn)/income*100;
+  const stPI=api(finalLoan,sr2,term);
+  const stDsr=(stPI+existAnn)/income*100;
+  const dtiAct=(newPI+exO*.6+exM*12)/income*100;
+
+  function gc(lbl,act,lim,maxB,unit,hint){
+    const p=Math.min(act/maxB*100,100),lp=Math.min(lim/maxB*100,100);
+    const ov=act>lim,nr=act>lim*.9;
+    const bc=ov?'var(--red)':nr?'var(--amber)':'var(--green)';
+    const sc=ov?'gs-over':nr?'gs-warn':'gs-ok';const st=ov?'한도 초과':nr?'한도 근접':'한도 내';
+    return`<div class="gauge-card"><div class="gauge-label">${lbl}</div><div class="gauge-bar-wrap"><div class="gauge-bar" style="width:${p}%;background:${bc}"></div><div class="gauge-limit-line" style="left:${lp}%"></div></div><div class="gauge-row"><div class="gauge-val" style="color:${bc}">${act.toFixed(1)}${unit}</div><div class="gauge-limit-text">한도 ${lim}${unit}</div></div><span class="gauge-status ${sc}">${st}</span>${hint?`<div style="font-size:10px;color:var(--text3);margin-top:3px">${hint}</div>`:''}</div>`;
+  }
+  $('up-gauge-area').innerHTML=gc('LTV',ltvAct,ltvLim,100,'%','최대 '+wan(ltvMax))+gc('DSR',dsrAct,40,80,'%','DSR한도 '+wan(dsrMax))+gc('스트레스DSR',stDsr,40,80,'%','한도 '+wan(stMax))+gc('DTI',dtiAct,dtiLim,100,'%','지역 한도 '+dtiLim+'%');
+
+  const methods=[{key:'ei',name:'원리금균등',c:'#c4933f'},{key:'ep',name:'원금균등',c:'#2a7c6f'},{key:'bullet',name:'만기일시',c:'#943030'},{key:'mixed',name:`혼합(거치${grace}년)`,c:'#7c5cbf'}];
+  const mres=methods.map(m=>{const s=buildSched(finalLoan,rate,term,m.key,grace);const ti=s.reduce((a,r)=>a+r.int,0);return{...m,sched:s,ti,fp:s[0].pmt,tp:finalLoan+ti};});
+
+  const depositStr=deposit>0?` <span style="color:var(--teal);font-size:10px">+ 임차보증금 ${wan(deposit)} 반영</span>`:'';
+  const incomeSrc=`<span style="color:var(--text3);font-size:10px"> (현재 ${wan(incomeNow)} × 성장률 ${(incomeGrowth*100).toFixed(1)}% × ${years}년 → ${wan(income)})</span>`;
+  const equityBreak=(proceeds>0||savings>0)?` <span style="font-size:10px;color:var(--text3)">(처분 ${wan(proceeds)} + 적립 ${wan(savings)})</span>`:'';
+  $('up-summary').innerHTML=`주택 매매가격 <b>${wan(targetPrice)}</b>${depositStr}  자기자금 <b style="color:var(--green)">${wan(equity)}</b>${equityBreak} → 필요대출 <b>${wan(loanNeed)}</b><br>적용 소득: <b>${wan(income)}</b>${incomeSrc}<br>실행가능 대출: <b style="color:${shortfall<100?'var(--green)':'var(--amber)'}">${wan(finalLoan)}</b> ${shortfall>100?`<span style="color:var(--red)"> ⚠ ${wan(shortfall)} 추가 자기자금 필요</span>`:'<span style="color:var(--green)"> ✓ 전액 가능</span>'}<br>월 상환(원리금균등): <b style="color:var(--blue)">${wan(mres[0].fp)}/월</b> · DSR <b style="color:${dsrAct>40?'var(--red)':'var(--green)'}">${dsrAct.toFixed(1)}%</b> · 스트레스DSR <b style="color:${stDsr>40?'var(--red)':'var(--green)'}">${stDsr.toFixed(1)}%</b>`;
+
+  $('up-repay-compare').innerHTML=mres.map(m=>`<div class="repay-card"><div class="repay-name">${m.name}</div><div class="repay-monthly" style="color:${m.c}">${wan(m.fp)}/월</div><div class="repay-total">총 ${wan(m.tp)}</div><div class="repay-interest">이자 ${wan(m.ti)}</div></div>`).join('');
+
+  const eiY=aggY(mres[0].sched),epY=aggY(mres[1].sched),blY=aggY(mres[2].sched),mxY=aggY(mres[3].sched);
+  const yL=eiY.map(d=>d.year+"년");
+  if(chartUpAmort)chartUpAmort.destroy();
+  (function(){var cv=$("up-chart-amort");cv.removeAttribute('style');
+    var ar=(cv.parentElement&&cv.parentElement.clientWidth>0)?(cv.parentElement.clientWidth/220):2.5;
+    chartUpAmort=new Chart(cv,{type:"bar",data:{labels:yL,datasets:[
+      {label:"원금",data:eiY.map(d=>Math.round(d.prin)),backgroundColor:"rgba(196,147,63,.7)",stack:"s"},
+      {label:"이자",data:eiY.map(d=>Math.round(d.int)),backgroundColor:"rgba(148,48,48,.5)",stack:"s"}
+    ]},options:{responsive:true,maintainAspectRatio:true,aspectRatio:ar,animation:{duration:0},plugins:{
+      legend:{labels:{color:"#7a776f",font:{size:11}}},
+      tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
+    },scales:{
+      x:{stacked:true,ticks:{color:"#7a776f",font:{size:10}},grid:{color:"rgba(26,24,20,.06)"}},
+      y:{stacked:true,ticks:{color:"#7a776f",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(26,24,20,.06)"}}
+    }}});
+  })();
+  if(chartUpBalance)chartUpBalance.destroy();
+  (function(){var cv=$("up-chart-balance");cv.removeAttribute('style');
+    var ar=(cv.parentElement&&cv.parentElement.clientWidth>0)?(cv.parentElement.clientWidth/160):3.5;
+    chartUpBalance=new Chart(cv,{type:"line",data:{labels:["시작",...yL],datasets:[
+      {label:"원리금균등",data:[finalLoan,...eiY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#c4933f",borderWidth:2,pointRadius:0,tension:.3,fill:false},
+      {label:"원금균등",data:[finalLoan,...epY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#2a7c6f",borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
+      {label:"만기일시",data:[finalLoan,...blY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#943030",borderWidth:1.5,pointRadius:0,tension:.3,fill:false,borderDash:[4,3]},
+      {label:"혼합",data:[finalLoan,...mxY.map(d=>d.bal)].map(v=>Math.round(v)),borderColor:"#7c5cbf",borderWidth:1.5,pointRadius:0,tension:.3,fill:false}
+    ]},options:{responsive:true,maintainAspectRatio:true,aspectRatio:ar,animation:{duration:0},interaction:{mode:"index",intersect:false},plugins:{
+      legend:{labels:{color:"#7a776f",font:{size:11}}},
+      tooltip:{backgroundColor:"#3d3a35",callbacks:{label:function(ctx){return" "+ctx.dataset.label+": "+ctx.parsed.y.toLocaleString()+"만원";}}}
+    },scales:{
+      x:{ticks:{color:"#7a776f",font:{size:10}},grid:{color:"rgba(26,24,20,.06)"}},
+      y:{ticks:{color:"#7a776f",font:{size:10},callback:function(v){return v.toLocaleString()+"만";}},grid:{color:"rgba(26,24,20,.06)"}}
+    }}});
+  })();
+
+  $('up-amort-tbody').innerHTML=eiY.map(d=>{const b=d.pmt/income*100;const bc=b>40?'t-neg':b>30?'':'t-pos';return`<tr><td class="t-yr">${d.year}년</td><td class="tnum">${wan(d.prin)}</td><td class="t-neg">${wan(d.int)}</td><td class="tnum">${wan(d.pmt)}</td><td class="tnum">${wan(d.bal)}</td><td class="${bc}">${b.toFixed(1)}%</td></tr>`;}).join('');
+
+  const inc12=income/12;
+  $('up-burden-content').innerHTML=`<div class="chart-wrap" style="padding:14px"><div class="chart-title">소득 대비 월 상환 부담</div><div style="display:grid;gap:10px;margin-top:8px">${mres.map(m=>{const pp=Math.min(m.fp/inc12*100,100);const col=pp>40?'var(--red)':pp>30?'var(--amber)':'var(--green)';return`<div><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--text2)">${m.name}</span><span style="font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:${col}">${wan(m.fp)}/월 (${(m.fp/inc12*100).toFixed(1)}%)</span></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pp}%;background:${col}"></div></div></div>`;}).join('')}</div><div style="margin-top:12px;font-size:11px;color:var(--text2);line-height:1.8">월소득 <b>${wan(inc12)}</b> · DSR <b style="color:${dsrAct>40?'var(--red)':'var(--green)'}">${dsrAct.toFixed(1)}%</b> · 총이자(원리금균등): <b style="color:var(--amber)">${wan(mres[0].ti)}</b> / 원금의 ${(mres[0].ti/finalLoan*100).toFixed(0)}%</div></div><div class="chart-wrap" style="padding:14px"><div class="chart-title">상환방식별 총 이자 비교</div><div style="display:grid;gap:8px;margin-top:6px">${mres.map(m=>`<div style="display:flex;align-items:center;gap:10px"><div style="width:80px;font-size:11px;color:var(--text2)">${m.name}</div><div style="flex:1"><div class="progress-bar-wrap"><div class="progress-bar" style="width:${Math.min(m.ti/mres[2].ti*100,100)}%;background:${m.c}"></div></div></div><div style="font-size:11px;font-family:'DM Mono',monospace;color:${m.c};min-width:80px;text-align:right">이자 ${wan(m.ti)}</div></div>`).join('')}</div></div>`;
+
+  window._upgradePrintImgs={};
+  _disablePrintBtn();
+  setTimeout(function(){
+    window._upgradePrintImgs['amort']=_capturePrint($('up-chart-amort'));
+    window._upgradePrintImgs['bal']=_capturePrint($('up-chart-balance'));
+    _enablePrintBtn();
+  },500);
+}
+
+// ══════════════════════════════════
 // HOUSING
 // ══════════════════════════════════
 const LTV={toher:{first:40,replace:40,multi:30},speculate:{first:40,replace:40,multi:30},adjust:{first:70,replace:60,multi:50},normal:{first:80,replace:80,multi:60}};
 let chartAmort=null,chartBalance=null;
 
+function remainingLoanBal(curBal,annualRatePct,startY,startM,endY,endM,futureMonths){
+  var now=new Date();
+  var nowY=now.getFullYear(),nowM=now.getMonth()+1;
+  var totalM=(endY-startY)*12+(endM-startM);
+  var elapsed=(nowY-startY)*12+(nowM-startM);
+  var remNow=Math.max(1,totalM-elapsed);
+  var n=Math.min(Math.round(futureMonths),remNow);
+  if(curBal<=0)return 0;
+  if(n<=0)return curBal;
+  var mr=annualRatePct/100/12;
+  if(mr===0)return Math.max(0,curBal*(1-n/remNow));
+  var pmt=curBal*mr*Math.pow(1+mr,remNow)/(Math.pow(1+mr,remNow)-1);
+  var factor=Math.pow(1+mr,n);
+  return Math.max(0,curBal*factor-pmt*(factor-1)/mr);
+}
 function mpi(P,r,n){if(r===0)return P/n;const mr=r/12;return P*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1)}
 function api(P,r,y){return mpi(P,r,y*12)*12}
 
@@ -1311,6 +1818,9 @@ function aggY(sched){
 }
 
 function runHousing(){
+  if(!goalCards.some(function(c){return c.type==='housing';})){
+    $('housing-empty').style.display='';$('housing-content').style.display='none';return;
+  }
   const price=+$('h-price').value||80000,equity=+$('h-equity').value||30000;
   const zone=$('h-zone').value,htype=$('h-htype').value;
   const tenantYn=$('h-tenant-yn')?$('h-tenant-yn').value:'no';
@@ -2583,8 +3093,8 @@ function runGift(){
 
 
 // ══ SAVE / LOAD / PRINT / RESET ══
-const _SI=['g-income-growth','h-price','h-equity','h-deposit','h-income','h-exist-m','h-exist-o','h-rate','h-stress','h-term','gf-market','gf-giftamt','gf-saleamt','gf-std','gf-cost','gf-tenant','gf-wedding','gf-prior','gf-hold','gf-live','gf-debt','jm-jeonse','jm-jloan','jm-jrise','jm-jrate','jm-mdeposit','jm-mrent','jm-mrise','jm-years'];
-const _SS=['h-zone','h-htype','h-tenant-yn','h-grace','gf-assettype','gf-htype','gf-adjzone','gf-rel','gf-grantee-house','gf-buyer-type','gf-buyer-house'];
+const _SI=['g-income-growth','h-price','h-equity','h-deposit','h-income','h-exist-m','h-exist-o','h-rate','h-stress','h-term','gf-market','gf-giftamt','gf-saleamt','gf-std','gf-cost','gf-tenant','gf-wedding','gf-prior','gf-hold','gf-live','gf-debt','jm-jeonse','jm-jloan','jm-jrise','jm-jrate','jm-mdeposit','jm-mrent','jm-mrise','jm-years','up-targetprice','up-proceeds','up-savings','up-income','up-exist-m','up-existdebt','up-newrate','up-stress','up-newterm'];
+const _SS=['h-zone','h-htype','h-tenant-yn','h-grace','gf-assettype','gf-htype','gf-adjzone','gf-rel','gf-grantee-house','gf-buyer-type','gf-buyer-house','up-zone','up-htype','up-grace'];
 const _SK='goal-sim-v1';
 
 function saveData(){
@@ -2659,6 +3169,7 @@ function _enablePrintBtn(){var b=document.querySelector('.hdr-btn-print');if(b){
 function doPrint(){
   if(_currentPage==='goals'){doPrintGoals();}
   else if(_currentPage==='housing'){doPrintHousing();}
+  else if(_currentPage==='upgrade'){doPrintUpgrade();}
   else{var pg=$('page-'+_currentPage);if(pg)pg.classList.add('print-show');window.print();if(pg)pg.classList.remove('print-show');}
 }
 function doPrintGoals(){
@@ -2698,6 +3209,8 @@ function doPrintGoals(){
       var msgHTML=msgEl?msgEl.outerHTML:'';
       var s=c.type==='housing'
         ?'현재가 '+wan(c.housePrice||c.amount)+' · '+c.years+'년 · 초기자산 '+wan(c.initAsset)+' · 월적립 '+wan(c.monthly)+' · 집값상승 '+(c.priceRise||3)+'%'
+        :c.type==='upgrade'
+        ?'현집 '+wan(c.curHousePrice||0)+' / 목표 '+wan(c.targetHousePrice||0)+' · 대출잔액 '+wan(c.loanBalance||0)+' '+( c.loanRate||4)+'% · '+c.years+'년 · 적립 '+wan(c.monthly)
         :'목표 '+wan(c.amount)+' · '+c.years+'년 · 초기자산 '+wan(c.initAsset)+' · 월적립 '+wan(c.monthly)+' · 기대수익률 '+c.nomRet+'% · 물가 '+(c.inflation||2.5)+'% · 변동성 '+c.stdDev+'%';
       pagesHTML+='<div class="pp">'
         +_identifiHdr('목적자금 복수 계산')
@@ -2722,7 +3235,7 @@ function doPrintGoals(){
     // base64 이미지 디코딩 완료 후 print (디코딩 전 print = 빈 화면)
     var imgEls=frame.querySelectorAll('img');
     var pending=imgEls.length;
-    function _doPrint(){window.print();document.body.removeChild(frame);document.body.classList.remove('print-goals');}
+    function _doPrint(){var _t=document.title;document.title='IdentiFi_GoalSimulator';window.print();document.title=_t;document.body.removeChild(frame);document.body.classList.remove('print-goals');}
     if(!pending){_doPrint();}
     else{imgEls.forEach(function(img){
       if(img.complete){if(--pending===0)_doPrint();}
@@ -2812,11 +3325,92 @@ function doPrintHousing(){
   document.body.appendChild(frame);
   var imgEls=frame.querySelectorAll('img');
   var pending=imgEls.length;
-  function _doPrintH(){window.print();document.body.removeChild(frame);document.body.classList.remove('print-housing');}
+  function _doPrintH(){var _t=document.title;document.title='IdentiFi_MortgageSimulator';window.print();document.title=_t;document.body.removeChild(frame);document.body.classList.remove('print-housing');}
   if(!pending){_doPrintH();}
   else{imgEls.forEach(function(img){
     if(img.complete){if(--pending===0)_doPrintH();}
     else{img.onload=img.onerror=function(){if(--pending===0)_doPrintH();};}
+  });}
+}
+
+function doPrintUpgrade(){
+  var content=$('up-content');
+  if(!content||content.style.display==='none'){alert('먼저 분석을 실행해주세요.');return;}
+  var income=+($('up-income')||{}).value||0;
+  if(!income){alert('연 소득을 입력해 주세요.\nDSR · 스트레스DSR · DTI 한도 계산에 소득이 필요합니다.');return;}
+  var _ui=window._upgradePrintImgs||{};
+  var amortImg=_ui['amort']||_capturePrint($('up-chart-amort'));
+  var balImg=_ui['bal']||_capturePrint($('up-chart-balance'));
+  function sv(id){var e=$(id);return e?e.value:'0';}
+  function selT(id){var e=$(id);return e?e.options[e.selectedIndex].text:'—';}
+  function rv(id){var e=$(id);return e?e.textContent:'—';}
+  function row(l,v){return '<div class="phpi-row"><span>'+l+'</span><b>'+v+'</b></div>';}
+  function secHd(t){return '<div class="php-section-hd">'+t+'</div>';}
+  var infoGrid='<div class="phpi-grid">'
+    +'<div class="phpi-block"><div class="phpi-title">목표 주택 정보</div>'
+      +(function(){var uc=goalCards.find(function(c){return c.type==='upgrade';});var y=uc?((uc.startYear||0)+(uc.years||10)):0;return row('갈아타기 시점',y>0?y+'년 후':'미연동');}())
+      +row('주택 매매가격 (목표 시점)',wan(+sv('up-targetprice')||0))
+      +row('주택 처분금액',wan(+sv('up-proceeds')||0))
+      +row('내 적립금',wan(+sv('up-savings')||0))
+      +row('자기자금 합계',wan((+sv('up-proceeds')||0)+(+sv('up-savings')||0)))
+      +row('지역 구분',selT('up-zone'))
+      +row('매수인 주택 보유',selT('up-htype'))
+    +'</div>'
+    +'<div class="phpi-block"><div class="phpi-title">소득 & 신규 대출</div>'
+      +row('현재 연 소득',wan(income))
+      +row('기존 주담대 월 상환',wan(+sv('up-exist-m')||0))
+      +row('기타 대출 연 원리금',wan(+sv('up-existdebt')||0))
+      +row('신규 대출 금리',rv('up-newrate-v'))
+      +row('스트레스 가산금리',rv('up-stress-v'))
+      +row('대출 기간',rv('up-newterm-v'))
+      +row('혼합형 거치',selT('up-grace'))
+    +'</div>'
+  +'</div>';
+  var gaugeHTML=$('up-gauge-area')?$('up-gauge-area').innerHTML:'';
+  var summaryEl=$('up-summary');
+  var summaryHTML=summaryEl?summaryEl.outerHTML:'';
+  var repayHTML=$('up-repay-compare')?$('up-repay-compare').innerHTML:'';
+  var amortTbody=$('up-amort-tbody')?$('up-amort-tbody').innerHTML:'';
+  var burdenHTML=$('up-burden-content')?$('up-burden-content').innerHTML:'';
+  var ihdr=_identifiHdr('주택 갈아타기 대출 분석');
+  var html='';
+  html+='<div class="php">'
+    +ihdr
+    +secHd('주택 갈아타기 분석')
+    +infoGrid
+    +'<div style="margin-top:12px">'
+      +'<div class="gauge-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px">'+gaugeHTML+'</div>'
+      +summaryHTML
+      +'<div class="repay-compare" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px">'+repayHTML+'</div>'
+      +(amortImg?'<div class="chart-wrap" style="margin-top:8px"><div class="chart-title">연도별 원금 / 이자 (원리금균등)</div><img style="width:100%;display:block" src="'+amortImg+'"></div>':'')
+      +(balImg?'<div class="chart-wrap" style="margin-top:8px"><div class="chart-title">상환방식별 잔여 원금 추이</div><img style="width:100%;display:block" src="'+balImg+'"></div>':'')
+    +'</div>'
+  +'</div>';
+  html+='<div class="php">'
+    +ihdr
+    +secHd('상환 스케줄')
+    +'<div class="chart-wrap" style="padding:0;overflow:hidden">'
+      +'<table class="data-table"><thead><tr><th>연도</th><th>연 원금</th><th>연 이자</th><th>연 합계</th><th>잔여원금</th><th>DSR점유</th></tr></thead>'
+      +'<tbody>'+amortTbody+'</tbody></table>'
+    +'</div>'
+  +'</div>';
+  html+='<div class="php">'
+    +ihdr
+    +secHd('부담 분석')
+    +burdenHTML
+  +'</div>';
+  var frame=document.createElement('div');
+  frame.id='print-content-u';
+  frame.innerHTML=html;
+  document.body.classList.add('print-upgrade');
+  document.body.appendChild(frame);
+  var imgEls=frame.querySelectorAll('img');
+  var pending=imgEls.length;
+  function _doPrintU(){var _t=document.title;document.title='IdentiFi_MortgageSimulator2';window.print();document.title=_t;document.body.removeChild(frame);document.body.classList.remove('print-upgrade');}
+  if(!pending){_doPrintU();}
+  else{imgEls.forEach(function(img){
+    if(img.complete){if(--pending===0)_doPrintU();}
+    else{img.onload=img.onerror=function(){if(--pending===0)_doPrintU();};}
   });}
 }
 
@@ -2834,6 +3428,7 @@ setTimeout(function(){
   updateFutureIncome();
   runHousing();
   runJeonseMonth();
+  initSliders();
 }, 200);
 
 
