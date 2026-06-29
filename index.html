@@ -471,6 +471,7 @@ select option{background:var(--bg2)}
       </div>
     </div>
     <div id="up-equity-box" class="info-hint" style="margin-top:5px"></div>
+    <div id="up-link-box" class="equity-link-box"></div>
     <label>지역 구분</label>
     <select id="up-zone" onchange="_autoUpgrade();">
       <option value="toher">토지거래허가구역 (토허제)</option>
@@ -1636,10 +1637,29 @@ function runUpgrade(){
   }
   // 목적자금 카드 계산값 자동 반영
   var ucDet=uc.result?uc.result.det:null;
+  var ucMc=uc.result?uc.result.mc:null;
   if(ucDet){
     if(ucDet.futureTargetHP){var el=$('up-targetprice');if(el)el.value=Math.round(ucDet.futureTargetHP);}
     var el2=$('up-proceeds');if(el2)el2.value=Math.round(ucDet.saleProceeds||0);
     var el3=$('up-savings');if(el3)el3.value=Math.round(ucDet.savingsAccumulated||0);
+  }
+  var linkBox=$('up-link-box');
+  if(linkBox){
+    if(ucDet){
+      var _sp=ucDet.saleProceeds||0,_sa=ucDet.savingsAccumulated||0;
+      var _ftp=ucDet.futureTargetHP||0,_ln=ucDet.loanNeeded||0;
+      var _fchp=ucDet.futureCurHP||0,_rb=ucDet.remainBal||0;
+      var _mc10loan=ucMc&&ucMc.pct?Math.max(0,_ftp-(ucMc.pct(10)+_sp)):null;
+      var _achieved=ucDet.finalAsset>=_ftp;
+      linkBox.style.display='block';
+      linkBox.innerHTML='<b>📊 목적자금 시뮬레이션 연결</b><br>'
+        +'현 주택 미래가 <b style="color:var(--text2)">'+wan(_fchp)+'</b> — 잔여대출 <b style="color:var(--amber)">'+wan(_rb)+'</b> = 처분순자금 <b>'+wan(_sp)+'</b><br>'
+        +'총 자기자금 <b style="color:'+(_achieved?'var(--green)':'var(--amber)')+'">'+wan(ucDet.finalAsset)+'</b> (처분 '+wan(_sp)+' + 적립 '+wan(_sa)+')<br>'
+        +'목표 주택 미래가 <b>'+wan(_ftp)+'</b> / 필요 신규 대출: <b style="color:'+(_ln>0?'var(--red)':'var(--green)')+'">'+(_ln>0?wan(_ln):'불필요')+'</b>'
+        +(_mc10loan!==null?'<br><span style="color:var(--text3);font-size:10px">MC 하위10%(보수적) 적립 기준 대출: <b style="color:var(--amber)">'+wan(_mc10loan)+'</b></span>':'');
+    } else {
+      linkBox.style.display='none';
+    }
   }
   var timeLbl=$('up-target-time-lbl');
   if(timeLbl)timeLbl.textContent='— '+years+'년 후 기준';
